@@ -17,6 +17,7 @@ class Universo:
         self.intervalo_animacao = intervalo_animacao
         self.limite_x = 4e11
         self.limite_y = 4e11
+        self.maneuver = []
         self.criar_corpos_celestes()
 
 
@@ -172,6 +173,7 @@ class Universo:
 
             ptr += 4
 
+        dydt = self.apply_impulse(t, dydt)
         return dydt
 
 
@@ -199,6 +201,9 @@ class Universo:
     def simular(self):
         self.simular_setup()
         events = self.create_event_functions()
+
+        #testar manobra, bem forte
+        #self.maneuver_add(t=1e7, dvx=1e5, dvy=3e4)
 
         t_eval = np.linspace(0, self.duracao, 20000)
         solucao = solve_ivp(self.equacoes_movimento, (0, self.duracao), self.y0, method='RK45', t_eval=t_eval, events=events, dense_output=True, rtol=1e-9, atol=1e-12,)
@@ -351,8 +356,65 @@ class Universo:
         return [event_closest_approach_earth, event_probe_escape_velocity]
 
 
+    #DONE 1: Adicionar manobra(maneuver)/impulso; (Inicialmente testar com valores fixos pra ver o efeito)
+    #manuever ta escrito errado
+    #pra testar uma manobra vai no simular e descomenta a que adicionei lá
+
+    def maneuver_add(self, t, dvx, dvy):
+        new_maneuver = {
+            "probe_index": self.probe_index,
+            "t": t,
+            "dvx": dvx,
+            "dvy": dvy,
+            #"dv": np.array([dvx, dvy]),
+            "Done": False,
+        }
+        self.maneuver.append(new_maneuver)
+        print(f"Maneuver added: t={t:.2e}, dv=({dvx:.2f}, {dvy:.2f})")
+
+
+    #use in equacoes_movimento
+    def apply_impulse(self, t, dydt):
+        
+        dt_tolerance = 1000
+        for maneuver in self.maneuver:
+            t_impulse = maneuver['t']
+
+            if (maneuver["Done"] == False) and ((t-t_impulse) < dt_tolerance):
+
+
+                ptr = 0
+                for i, cc in enumerate(self.corpos_celestes):
+                    if i == self.fixed_body_index:
+                        continue
+                    
+                    #eu queria tentar manter o index na manobra pra visualizacao, mas daria pra subsituir por isso aqui
+                    #if i == self.probe_index:
+                    if i == maneuver["probe_index"]:
+                        #acho que naquela parte de turn do harpia tem um nome melhor pra isso
+                        rate1 = 2.0 / dt_tolerance
+                        rate2 = 1.0 / ( 2 * dt_tolerance)
+                        rate3 = 5e3
+                        rate = rate3
+                        #dydt = dv --> dydt[ptr + 2] = dvx/dt, dydt[ptr + 3] = dvy/dt
+                        dydt[ptr+2] += maneuver["dvx"] * rate
+                        dydt[ptr+3] += maneuver["dvy"] * rate
+
+                        if t > t_impulse:
+                            maneuver["Done"] = True
+
+                        print(f"Applying impulse in: t:{t:.2e}s, t_impulse:{t:.2e}s")
+                        break
+
+                    ptr += 4
+        return dydt                
+
+    #equacoes_movimento adicionei uma linha, o do apply_impulse
+
+
+#FUNCIONOU, agora preciso sair então vou dar push
+
 """
-TODO 1: Adicionar manobra/impulso; (Inicialmente testar com valores fixos pra ver o efeito)
 TODO 2: Criar optimizer.py pra fazer a otimizacao
 TODO 3: Aplicar a otiimzação em si no resto do codigo
 """
