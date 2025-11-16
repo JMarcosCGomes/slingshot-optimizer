@@ -1,4 +1,3 @@
-import random
 import numpy as np
 import matplotlib as plt
 import matplotlib.pyplot as plt
@@ -29,13 +28,15 @@ class Universo:
         
         # === Sol ===
         self.Sol = Corpo_Celeste(massa=2e30, raio=6.957e8, color="yellow", name="Sol", orbit_radius=0.0, angle_deg=0,)
-        self.fixed_body_name = "Sol"
+        self.fixed_body_name = self.Sol.name
         self.fixed_body_index = 0
         self.corpos_celestes.append(self.Sol)
         
         # === Terra ===
         self.Terra = Corpo_Celeste(massa=5.972e24, raio=6.371e6, color="blue", name="Terra", orbit_radius=1.49e11, angle_deg=0,)
         self.Terra.vel_x, self.Terra.vel_y = self.Terra.Calculate_SunPlanet_Speed()
+        self.planet_name = self.Terra.name
+        self.planet_index = 1
         self.corpos_celestes.append(self.Terra)
 
         # === Probe ===
@@ -54,7 +55,7 @@ class Universo:
         self.Probe.pos_y += self.Terra.pos_y
         cpss_params = self.Terra.return_cpss_params()
         self.Probe.vel_x, self.Probe.vel_y = self.Probe.Calculate_PlanetSatelite_Speed(**cpss_params)
-        self.probe_name = "Probe"
+        self.probe_name = self.Probe.name
         self.probe_index = 2
         self.corpos_celestes.append(self.Probe)
 
@@ -141,7 +142,7 @@ class Universo:
         return all_positions, all_velocities, dydt
 
 
-    # tem que deixar t aqui pelo RK4Solver
+    # tem que deixar t aqui pelo Solver
     def equacoes_movimento(self, t, y):
         all_positions, all_velocities, dydt = self.equacoes_movimento_setup(y)
 
@@ -197,9 +198,11 @@ class Universo:
 
     def simular(self):
         self.simular_setup()
-        t_eval = np.linspace(0, self.duracao, 20000)
-        solucao = solve_ivp(self.equacoes_movimento, (0, self.duracao), self.y0, method='RK45', t_eval=t_eval, rtol=1e-9, atol=1e-12,)
+        events = self.create_event_functions()
 
+        t_eval = np.linspace(0, self.duracao, 20000)
+        solucao = solve_ivp(self.equacoes_movimento, (0, self.duracao), self.y0, method='RK45', t_eval=t_eval, events=events, dense_output=True, rtol=1e-9, atol=1e-12,)
+        
 
         solucao_array = solucao.y.T
 
@@ -213,6 +216,21 @@ class Universo:
                 self.corpos_celestes[i].vel_x = state["vel_x"]
                 self.corpos_celestes[i].vel_y = state["vel_y"]
                 self.corpos_celestes[i].trace.append((state["pos_x"], state["pos_y"]))
+
+        print("[INFO] DETECTED EVENTS")
+        print(f"[INFO] solucao.t_events: {solucao.t_events}")
+        
+
+        if len(solucao.t_events) > 0:
+            print("[INFO] STATES IN EVENT:")
+            for idx_event, t_list in enumerate(solucao.t_events):
+                for t_event in t_list:
+                    state = solucao.sol(t_event)
+                    # probe está no segundo estado, 4,5,6,7
+                    probe_x = state[4]
+                    probe_y = state[5]
+                    print(f"Evento {idx_event} – t = {t_event:.2e} s – Probe ({probe_x:.3e}, {probe_y:.3e})")
+
 
         return solucao_array
     
@@ -254,3 +272,87 @@ class Universo:
             plt.legend()
             plt.show()
 
+
+    def create_event_functions(self):
+    
+        def event_closest_approach_earth(t, y):
+
+            earth_pos = None
+            probe_pos = None
+
+            ptr = 0
+
+            for i, cc in enumerate(self.corpos_celestes):
+                if i == self.fixed_body_index:
+                    continue
+                
+                if i == self.planet_index: #planeta relacionada ao gravity assist
+                    earth_pos = np.array([y[ptr], y[ptr+1]])
+                elif i == self.probe_index: #Probe
+                    probe_pos = np.array([y[ptr], y[ptr+1]])
+                
+                ptr += 4
+
+            if (earth_pos is not None) and (probe_pos is not None):
+                distance = np.linalg.norm(probe_pos - earth_pos)
+                return distance - 1e8
+            
+            return 1e10
+
+        event_closest_approach_earth.terminal = False
+        event_closest_approach_earth.direction = -1
+
+        
+        def event_probe_escape_velocity(t, y):
+            ptr = 0
+            earth_pos = None
+            probe_pos = None
+            probe_vel = None
+
+            for i, cc in enumerate(self.corpos_celestes):
+
+                if i == self.fixed_body_index:
+                    continue
+                
+                if i == self.planet_index:
+                    earth_pos = np.array([y[ptr], y[ptr+1]])
+
+                elif i == self.probe_index:
+                    probe_pos = np.array([y[ptr], y[ptr+1]])
+                    probe_vel = np.array([y[ptr+2], y[ptr+3]])
+                ptr += 4
+
+            if earth_pos is not None and probe_pos is not None:
+                r_vec = probe_pos - earth_pos
+                r = np.linalg.norm(r_vec)
+                v = np.linalg.norm(probe_vel)
+                v_escape = np.sqrt(2 * self.G * self.Terra.massa / r)
+
+                return v - v_escape
+
+            return -1e10
+    
+        event_probe_escape_velocity.terminal = False
+        event_probe_escape_velocity.direction = 1
+
+
+        """
+        #a simple event that finished the code when t = 1e6
+        def event_test(t, y):
+            return t - 1e6
+        
+        #True to stop when happens and False to don't
+        event_test.terminal = False
+        event_test.direction = 1
+
+        return [event_closest_approach_earth, event_probe_escape_velocity, event_test]
+        #"""
+
+        return [event_closest_approach_earth, event_probe_escape_velocity]
+
+
+"""
+TODO 1: Adicionar manobra/impulso; (Inicialmente testar com valores fixos pra ver o efeito)
+TODO 2: Criar optimizer.py pra fazer a otimizacao
+TODO 3: Aplicar a otiimzação em si no resto do codigo
+"""
