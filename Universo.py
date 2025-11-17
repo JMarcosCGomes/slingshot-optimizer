@@ -34,7 +34,7 @@ class Universo:
         self.corpos_celestes.append(self.Sol)
         
         # === Terra ===
-        self.Terra = Corpo_Celeste(massa=5.972e24, raio=6.371e6, color="blue", name="Terra", orbit_radius=1.49e11, angle_deg=0,)
+        self.Terra = Corpo_Celeste(massa=5.972e24, raio=6.371e6, color="blue", name="Terra", orbit_radius=1.49e11, angle_deg=-135,)
         self.Terra.vel_x, self.Terra.vel_y = self.Terra.Calculate_SunPlanet_Speed()
         self.planet_name = self.Terra.name
         self.planet_index = 1
@@ -51,7 +51,7 @@ class Universo:
         test_or5 = 2.0e8
 
         test_or = test_or5
-        self.Probe = Corpo_Celeste(massa=5.9e6, raio=5e2, color="yellow", name="Probe", orbit_radius=test_or, angle_deg=30,)
+        self.Probe = Corpo_Celeste(massa=5.9e6, raio=5e2, color="yellow", name="Probe", orbit_radius=test_or, angle_deg=0,)
         self.Probe.pos_x += self.Terra.pos_x
         self.Probe.pos_y += self.Terra.pos_y
         cpss_params = self.Terra.return_cpss_params()
@@ -200,14 +200,9 @@ class Universo:
 
     def simular(self):
         self.simular_setup()
-        events = self.create_event_functions()
 
-        #testar manobra, bem forte
-        #self.maneuver_add(t=1e7, dvx=1e5, dvy=3e4)
-
-        t_eval = np.linspace(0, self.duracao, 20000)
-        solucao = solve_ivp(self.equacoes_movimento, (0, self.duracao), self.y0, method='RK45', t_eval=t_eval, events=events, dense_output=True, rtol=1e-9, atol=1e-12,)
-        
+        solve_ivp_parameters = self.get_solveivp_params()
+        solucao = solve_ivp(**solve_ivp_parameters)
 
         solucao_array = solucao.y.T
 
@@ -234,10 +229,28 @@ class Universo:
                     # probe está no segundo estado, 4,5,6,7
                     probe_x = state[4]
                     probe_y = state[5]
-                    print(f"Evento {idx_event} – t = {t_event:.2e} s – Probe ({probe_x:.3e}, {probe_y:.3e})")
-
+                    print(f"Event {idx_event} – t = {t_event:.2e} s – Probe ({probe_x:.3e}, {probe_y:.3e})")
 
         return solucao_array
+    
+
+    def get_solveivp_params(self):
+        events = self.create_event_functions()
+        t_eval = np.linspace(0, self.duracao, 20000)
+
+        sivp_params = {
+            "fun": self.equacoes_movimento,
+            "t_span": (0, self.duracao),
+            "y0": self.y0,
+            "method": 'RK45',
+            "t_eval": t_eval,
+            "events": events,
+            "dense_output": True,
+            "rtol": 1e-9,
+            "atol": 1e-12,
+        }
+
+        return sivp_params
     
 
     def animar(self, solucao_array):
@@ -287,7 +300,8 @@ class Universo:
 
             ptr = 0
 
-            for i, cc in enumerate(self.corpos_celestes):
+            #for i, cc in enumerate(self.corpos_celestes):
+            for i in range(len(self.corpos_celestes)):
                 if i == self.fixed_body_index:
                     continue
                 
@@ -314,7 +328,8 @@ class Universo:
             probe_pos = None
             probe_vel = None
 
-            for i, cc in enumerate(self.corpos_celestes):
+            #for i, cc in enumerate(self.corpos_celestes):
+            for i in range(len(self.corpos_celestes)):
 
                 if i == self.fixed_body_index:
                     continue
@@ -384,7 +399,8 @@ class Universo:
 
 
                 ptr = 0
-                for i, cc in enumerate(self.corpos_celestes):
+                #for i, cc in enumerate(self.corpos_celestes):
+                for i in range(len(self.corpos_celestes)):
                     if i == self.fixed_body_index:
                         continue
                     
@@ -392,9 +408,9 @@ class Universo:
                     #if i == self.probe_index:
                     if i == maneuver["probe_index"]:
                         #acho que naquela parte de turn do harpia tem um nome melhor pra isso
-                        rate1 = 2.0 / dt_tolerance
-                        rate2 = 1.0 / ( 2 * dt_tolerance)
-                        rate3 = 5e3
+                        rate1 = 1.0 / dt_tolerance
+                        rate2 = 2.0 / dt_tolerance
+                        rate3 = 1.0 / ( 2 * dt_tolerance)
                         rate = rate3
                         #dydt = dv --> dydt[ptr + 2] = dvx/dt, dydt[ptr + 3] = dvy/dt
                         dydt[ptr+2] += maneuver["dvx"] * rate
@@ -409,10 +425,7 @@ class Universo:
                     ptr += 4
         return dydt                
 
-    #equacoes_movimento adicionei uma linha, o do apply_impulse
 
-
-#FUNCIONOU, agora preciso sair então vou dar push
 
 """
 TODO 2: Criar optimizer.py pra fazer a otimizacao
