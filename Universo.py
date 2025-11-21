@@ -35,8 +35,9 @@ class Universo:
         self.fixed_body_name = self.corpos_celestes[self.fixed_body_index].name
         
         # === Terra ===
-        self.Terra = Corpo_Celeste(massa=5.972e24, raio=6.371e6, color="blue", name="Terra", orbit_radius=1.49e11, angle_deg=-125,)
-        self.Terra.vel_x, self.Terra.vel_y = self.Terra.Calculate_SunPlanet_Speed()
+        self.Terra = Corpo_Celeste(massa=5.972e24, raio=6.371e6, color="blue", name="Terra", orbit_radius=1.49e11, angle_deg=-125,wir_id=self.fixed_body_index)
+        covp = self.corpos_celestes[self.Terra.wir_id].return_cov_parameters()
+        self.Terra.vel_x, self.Terra.vel_y = self.Terra.Calculate_Orbital_Velocity(**covp)
         self.corpos_celestes.append(self.Terra)
         self.planet_index = len(self.corpos_celestes) - 1
         self.planet_name = self.corpos_celestes[self.planet_index].name
@@ -50,15 +51,14 @@ class Universo:
         rocket_vel_x = rocket_vel_module * np.sin(planet_vel_angle_deg)
         rocket_vel_y = rocket_vel_module * np.cos(planet_vel_angle_deg)
 
-        altitude_to_earth = 2.347e6
-        test_or1 = self.Terra.raio + altitude_to_earth
-        #roda mas demora mt, o bom seria colocar a distancia como 1e7 ou 1e7, mas acho que deve ficar MUITO lento
-        test_or2 = 5.0e7
-        #roda e demora menos
-        test_or3 = 2.0e8
 
-        test_or = test_or3
-        self.Probe = Corpo_Celeste(massa=5.9e6, raio=5e2, color="yellow", name="Probe", orbit_radius=test_or, angle_deg=planet_vel_angle_deg,)
+        #roda mas demora mt, o bom seria colocar a distancia como 1e7 ou 1e7, mas acho que deve ficar MUITO lento
+        test_or1 = 5.0e7
+        #roda e demora menos
+        test_or2 = 2.0e8
+
+        test_or = test_or2
+        self.Probe = Corpo_Celeste(massa=5.9e6, raio=5e2, color="yellow", name="Probe", orbit_radius=test_or, angle_deg=planet_vel_angle_deg, wir_id=self.planet_index, is_orbiting=False)
         self.Probe.pos_x += self.Terra.pos_x
         self.Probe.pos_y += self.Terra.pos_y
         self.Probe.vel_x = self.corpos_celestes[self.planet_index].vel_x + rocket_vel_x
@@ -68,11 +68,11 @@ class Universo:
         self.probe_name = self.corpos_celestes[self.probe_index].name
 
         # === Lua ===
-        self.Lua = Corpo_Celeste(massa=7.346e22, raio=1.737e6, color="white", name="Lua", orbit_radius=3.84e8, angle_deg=30,)
+        self.Lua = Corpo_Celeste(massa=7.346e22, raio=1.737e6, color="white", name="Lua", orbit_radius=3.84e8, angle_deg=30, wir_id=self.corpos_celestes.index(self.Terra))
         self.Lua.pos_x += self.Terra.pos_x
         self.Lua.pos_y += self.Terra.pos_y
-        cpss_params = self.Terra.return_cpss_params()
-        self.Lua.vel_x, self.Lua.vel_y = self.Lua.Calculate_PlanetSatelite_Speed(**cpss_params)
+        covp = self.corpos_celestes[self.Lua.wir_id].return_cov_parameters()
+        self.Lua.vel_x, self.Lua.vel_y = self.Lua.Calculate_Orbital_Velocity(**covp)
         self.corpos_celestes.append(self.Lua)
 
         for cc in self.corpos_celestes:
@@ -242,9 +242,8 @@ class Universo:
             for idx_event, t_list in enumerate(solucao.t_events):
                 for t_event in t_list:
                     state = solucao.sol(t_event)
-                    # probe está no segundo estado, 4,5,6,7
-                    probe_x = state[4]
-                    probe_y = state[5]
+                    probe_x = state[self.probe_index*4]
+                    probe_y = state[self.probe_index*4 + 1]
                     print(f"Event {idx_event} – t = {t_event:.2e} s – Probe ({probe_x:.3e}, {probe_y:.3e})")
 
         return solucao_array

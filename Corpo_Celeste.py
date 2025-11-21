@@ -2,7 +2,7 @@ import numpy as np
 
 class Corpo_Celeste:
 
-    def __init__(self, massa, raio, color, name, orbit_radius, angle_deg, vel_x=0.0, vel_y=0.0):
+    def __init__(self, massa, raio, color, name, orbit_radius, angle_deg, wir_id=None, is_orbiting=True, vel_x=0.0, vel_y=0.0):
         self.massa = massa
         self.raio = raio
         self.color = color
@@ -12,6 +12,8 @@ class Corpo_Celeste:
         self.angle_rad = np.deg2rad(angle_deg)
         self.pos_x = self.orbit_radius * np.cos(self.angle_rad)
         self.pos_y = self.orbit_radius * np.sin(self.angle_rad)
+        self.wir_id = wir_id #who is related id, lua e relacionada com a terra, marte é relacionado com o sol .. daria pra colocar nome mas preferi id
+        self.is_orbiting = is_orbiting #isso aqui caso tenha um monte de cc e decidir adicionar no loop pra somar as posicoes e calcular velocidades
         self.vel_x = float(vel_x)
         self.vel_y = float(vel_y)
 
@@ -30,8 +32,9 @@ class Corpo_Celeste:
         info = [self.vel_x, self.vel_y]
         return info
 
-    #when you want to get the params to Canculate_PlanetSatelite_Speed
-    def return_cpss_params(self):
+    
+    def return_cov_parameters(self):
+        #se vai calcular a velocidade da terra com o sol você usa isso no sol pra pegar as infos
         params = {"planet_mass": self.massa,
                   "planet_x": self.pos_x,
                   "planet_y": self.pos_y,
@@ -41,16 +44,7 @@ class Corpo_Celeste:
         return params
 
 
-    def Calculate_SunPlanet_Speed(self):
-        const_G = 6.67430e-11
-        sun_mass = 2e30
-        speed_module = np.sqrt(const_G * sun_mass / self.orbit_radius)
-        relative_vx = -speed_module * np.sin(self.angle_rad)
-        relative_vy = speed_module * np.cos(self.angle_rad)
-        return relative_vx, relative_vy
-    
-
-    def Calculate_PlanetSatelite_Speed(self, planet_mass, planet_x, planet_y, planet_vx, planet_vy):
+    def Calculate_Orbital_Velocity(self, planet_mass, planet_x, planet_y, planet_vx, planet_vy):
         const_G = 6.67430e-11
         v_planet = np.array([planet_vx, planet_vy])
         vector_planet_satelite = np.array([self.pos_x - planet_x, self.pos_y - planet_y])
@@ -64,18 +58,9 @@ class Corpo_Celeste:
         return resultant_speed_x, resultant_speed_y
 
 
-
-
-#planet creation process
-#planeta simples
-#self.Planet(massa=pmass, raio=praio, color=pcolor, name=pname, orbit_radius=porbit_radius, angle_deg=pangle_deg)
-#self.Planet.vel_x, self.Planet.vel_y = Calculate_SunPlanet_Speed()
+#self.Planet = Corpo_Celeste(massa=pmass, raio=praio, color=pcolor, name=pname, orbit_radius=por, angle_deg=pad, wir_id=self.corpos_celestes.index(self.Pwir))
+#self.Planet.pos_x += self.Pwir.pos_x
+#self.Planet.pos_y += self.Pwir.pos_y
+#covp = self.corpos_celestes[self.Planet.wir_id].return_cov_parameters()
+#self.Planet.vel_x, self.Planet.vel_y = self.Planet.Calculate_Orbital_Velocity(**covp)
 #self.corpos_celestes.append(self.Planet)
-
-#se ta orbitando algum planeta; Pqo = planetaqueorbita
-#self.Satelite(massa=smass, raio=sraio, color=scolor, name=sname, orbit_radius=sorbit_radius, angle_deg=sangle_deg)
-#self.Satelite.pos_x += self.Pqo.pos_x
-#self.Satelite.pos_y += self.Pqo.pos_y
-#cpss_params = self.Pqo.return_cpss_params()
-#self.Satelite.vel_x, self.Satelite.vel_y = self.Satelite.Calculate_PlanetSatelite_Speed(**cpss_params)
-#self.corpos_celestes.append(self.Satelite)
