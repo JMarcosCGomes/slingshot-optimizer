@@ -189,7 +189,6 @@ class Universo:
 
             ptr += 4
 
-        #dydt = self.apply_impulse(t, dydt)
         return dydt
 
 
@@ -219,6 +218,20 @@ class Universo:
         solucao1 = solve_ivp(**solve_ivp_parameters)
 
         new_y02 = solucao1.y[:, -1].copy() #ultimo estado
+        """
+        a ideia aqui é adicionar uma manobra de teste, causando um deltaV para o probe.
+        Dado que os estados do probe estão no index (self.probe_index - 1)*4 até (self.probe_index - 1)*4 {obs: tem um -1 ali porque o sol saiu dos indexes};
+          estados_finais = new_y02 -> new_y02[(self.probe_index - 1)*4] até new_y02[(self.probe_index - 1)*4+3]
+         achamos que a sua velocidade está em probe_vx = (self.probe_index - 1)*4+2, probe_vy = (self.probe_index - 1)*4+3;
+         Com isso resta apenas alterar a velocidade 
+        """
+        deltavx = 5e2
+        deltavy = -2e3
+        #new_y02[self.probe_index+2] += deltavx
+        #new_y02[self.probe_index+3] += deltavy
+        new_y02[(self.probe_index-1)*4+2] += deltavx
+        new_y02[(self.probe_index-1)*4+3] += deltavy
+
         solve_ivp_parameters = self.get_solveivp_params(simulation_segment="next", new_y0=new_y02)
         solucao2 = solve_ivp(**solve_ivp_parameters)
 
@@ -416,49 +429,3 @@ class Universo:
         return [event_aphelion]
         return [event_closest_approach_earth, event_probe_escape_velocity, event_aphelion]
     
-
-    def maneuver_add(self, t, dvx, dvy):
-        new_maneuver = {
-            "probe_index": self.probe_index,
-            "t": t,
-            "dvx": dvx,
-            "dvy": dvy,
-            #"dv": np.array([dvx, dvy]),
-            "Done": False,
-        }
-        self.maneuver.append(new_maneuver)
-        print(f"Maneuver added: t={t:.2e}, dv=({dvx:.2f}, {dvy:.2f})")
-
-
-    #use in equacoes_movimento
-    def apply_impulse(self, t, dydt):
-        
-        dt_tolerance = 1000
-        for maneuver in self.maneuver:
-            t_impulse = maneuver['t']
-
-            if (maneuver["Done"] == False) and ((t-t_impulse) < dt_tolerance):
-
-
-                ptr = 0
-                #for i, cc in enumerate(self.corpos_celestes):
-                for i in range(len(self.corpos_celestes)):
-                    if i == self.fixed_body_index:
-                        continue
-                    
-                    #eu queria tentar manter o index na manobra pra visualizacao, mas daria pra subsituir por isso aqui
-                    #if i == self.probe_index:
-                    if i == maneuver["probe_index"]:
-                        rate = 1.0 / ( 2 * dt_tolerance)
-                        #dydt = dv --> dydt[ptr + 2] = dvx/dt, dydt[ptr + 3] = dvy/dt
-                        dydt[ptr+2] += maneuver["dvx"] * rate
-                        dydt[ptr+3] += maneuver["dvy"] * rate
-
-                        if t > t_impulse:
-                            maneuver["Done"] = True
-
-                        print(f"Applying impulse in: t:{t:.2e}s, t_impulse:{t:.2e}s")
-                        break
-
-                    ptr += 4
-        return dydt
