@@ -210,19 +210,24 @@ class Universo:
         if posicao_inicial is None:
             print("Nenhum clique detectado.")
             return None
-        #se adicionar algum curpo novo depois de criar_corpos_celestes
-        #self.y0 = self.get_y0()
 
 
     def simular(self):
         self.simular_setup()
 
-        solve_ivp_parameters = self.get_solveivp_params()
-        solucao = solve_ivp(**solve_ivp_parameters)
+        solve_ivp_parameters = self.get_solveivp_params(simulation_segment="initial")
+        solucao1 = solve_ivp(**solve_ivp_parameters)
 
-        solucao_array = solucao.y.T
+        new_y02 = solucao1.y[:, -1].copy() #ultimo estado
+        solve_ivp_parameters = self.get_solveivp_params(simulation_segment="next", new_y0=new_y02)
+        solucao2 = solve_ivp(**solve_ivp_parameters)
 
-        for step in range(len(solucao.t)):
+        t_full = np.concatenate((solucao1.t, solucao2.t))
+        y_full = np.concatenate((solucao1.y, solucao2.y), axis=1)
+
+        solucao_array = y_full.T
+
+        for step in range(len(t_full)):
             y_in_t = solucao_array[step]
             current_states = self.get_current_state(y_in_t)
 
@@ -233,10 +238,11 @@ class Universo:
                 self.corpos_celestes[i].vel_y = state["vel_y"]
                 self.corpos_celestes[i].trace.append((state["pos_x"], state["pos_y"]))
 
+        """
+        #tem que iterar nas duas solucoes, faco isso depois se necessario
+
         print("[INFO] DETECTED EVENTS")
         print(f"[INFO] solucao.t_events: {solucao.t_events}")
-        
-
         if len(solucao.t_events) > 0:
             print("[INFO] STATES IN EVENT:")
             for idx_event, t_list in enumerate(solucao.t_events):
@@ -245,18 +251,29 @@ class Universo:
                     probe_x = state[self.probe_index*4]
                     probe_y = state[self.probe_index*4 + 1]
                     print(f"Event {idx_event} – t = {t_event:.2e} s – Probe ({probe_x:.3e}, {probe_y:.3e})")
+        """
 
         return solucao_array
     
 
-    def get_solveivp_params(self):
-        events = self.create_event_functions()
+    def get_solveivp_params(self, simulation_segment, new_y0=None):
+        #events = self.create_event_functions()
         t_eval = np.linspace(0, self.duracao, 20000)
+        
+        #simulation segment can be. initial: events are event_aphelion; next: for now events: None
+        if simulation_segment == "initial":
+            events = self.create_event_functions()
+            y0 = self.y0
+        elif simulation_segment == "next":
+            events = None
+            y0 = new_y0
+        else:
+            print("YOU FAILED, error in get_solveivp_params, unexpected simulation_segment")
 
         sivp_params = {
             "fun": self.equacoes_movimento,
             "t_span": (0, self.duracao),
-            "y0": self.y0,
+            "y0": y0,
             "method": 'RK45', 
             "t_eval": t_eval,
             "events": events,
