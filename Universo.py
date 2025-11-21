@@ -1,4 +1,5 @@
 import numpy as np
+import math #for arctang
 import matplotlib as plt
 import matplotlib.pyplot as plt
 
@@ -29,36 +30,42 @@ class Universo:
         
         # === Sol ===
         self.Sol = Corpo_Celeste(massa=2e30, raio=6.957e8, color="yellow", name="Sol", orbit_radius=0.0, angle_deg=0,)
-        self.fixed_body_name = self.Sol.name
-        self.fixed_body_index = 0
         self.corpos_celestes.append(self.Sol)
+        self.fixed_body_index = len(self.corpos_celestes) - 1
+        self.fixed_body_name = self.corpos_celestes[self.fixed_body_index].name
         
         # === Terra ===
-        self.Terra = Corpo_Celeste(massa=5.972e24, raio=6.371e6, color="blue", name="Terra", orbit_radius=1.49e11, angle_deg=-135,)
+        self.Terra = Corpo_Celeste(massa=5.972e24, raio=6.371e6, color="blue", name="Terra", orbit_radius=1.49e11, angle_deg=-125,)
         self.Terra.vel_x, self.Terra.vel_y = self.Terra.Calculate_SunPlanet_Speed()
-        self.planet_name = self.Terra.name
-        self.planet_index = 1
         self.corpos_celestes.append(self.Terra)
+        self.planet_index = len(self.corpos_celestes) - 1
+        self.planet_name = self.corpos_celestes[self.planet_index].name
 
         # === Probe ===
+        #pro foguete (que lanca o probe) tambem ir na mesma direcao da velocidade da terra
+        planet_vel_angle_rad = math.atan2(self.corpos_celestes[self.planet_index].vel_y, self.corpos_celestes[self.planet_index].vel_x)
+        planet_vel_angle_deg = math.degrees(planet_vel_angle_rad)
+
+        rocket_vel_module = 5.8e3
+        rocket_vel_x = rocket_vel_module * np.sin(planet_vel_angle_deg)
+        rocket_vel_y = rocket_vel_module * np.cos(planet_vel_angle_deg)
+
         altitude_to_earth = 2.347e6
         test_or1 = self.Terra.raio + altitude_to_earth
-        test_or2 = 6.371e6 + 2.347e6
-        test_or3 = 8.7e6
-        #roda mas demora mt
-        test_or4 = 5.0e7
+        #roda mas demora mt, o bom seria colocar a distancia como 1e7 ou 1e7, mas acho que deve ficar MUITO lento
+        test_or2 = 5.0e7
         #roda e demora menos
-        test_or5 = 2.0e8
+        test_or3 = 2.0e8
 
-        test_or = test_or5
-        self.Probe = Corpo_Celeste(massa=5.9e6, raio=5e2, color="yellow", name="Probe", orbit_radius=test_or, angle_deg=0,)
+        test_or = test_or3
+        self.Probe = Corpo_Celeste(massa=5.9e6, raio=5e2, color="yellow", name="Probe", orbit_radius=test_or, angle_deg=planet_vel_angle_deg,)
         self.Probe.pos_x += self.Terra.pos_x
         self.Probe.pos_y += self.Terra.pos_y
-        cpss_params = self.Terra.return_cpss_params()
-        self.Probe.vel_x, self.Probe.vel_y = self.Probe.Calculate_PlanetSatelite_Speed(**cpss_params)
-        self.probe_name = self.Probe.name
-        self.probe_index = 2
+        self.Probe.vel_x = self.corpos_celestes[self.planet_index].vel_x + rocket_vel_x
+        self.Probe.vel_y = self.corpos_celestes[self.planet_index].vel_y + rocket_vel_y
         self.corpos_celestes.append(self.Probe)
+        self.probe_index = len(self.corpos_celestes) - 1
+        self.probe_name = self.corpos_celestes[self.probe_index].name
 
         # === Lua ===
         self.Lua = Corpo_Celeste(massa=7.346e22, raio=1.737e6, color="white", name="Lua", orbit_radius=3.84e8, angle_deg=30,)
@@ -102,6 +109,15 @@ class Universo:
                 ax.plot([cc.pos_x], [cc.pos_y], "o", markersize=6, label=f"{cc.name}", markerfacecolor=cc.color, markeredgecolor="black", markeredgewidth=1.0)
             else:
                 ax.plot([cc.pos_x], [cc.pos_y], "o", markersize=12, label=f"{cc.name}", markerfacecolor=cc.color, markeredgecolor="black", markeredgewidth=1.0)
+
+
+    def simple_plot(self):
+        fig, ax = plt.subplots(figsize=(15, 8))
+        self.criar_plot(ax)
+        self.plotar_corpos_celestes(ax)
+        ax.set_title("Plot simples para visualizar as posicoes iniciais")
+        plt.legend()
+        plt.show()
 
 
     def capturar_posicao_inicial(self):
@@ -173,7 +189,7 @@ class Universo:
 
             ptr += 4
 
-        dydt = self.apply_impulse(t, dydt)
+        #dydt = self.apply_impulse(t, dydt)
         return dydt
 
 
@@ -242,13 +258,15 @@ class Universo:
             "fun": self.equacoes_movimento,
             "t_span": (0, self.duracao),
             "y0": self.y0,
-            "method": 'RK45',
+            "method": 'RK45', 
             "t_eval": t_eval,
             "events": events,
             "dense_output": True,
+            "max_step": 86400/4, #isso dá 1/4 dia por passo
             "rtol": 1e-9,
             "atol": 1e-12,
         }
+        
 
         return sivp_params
     
@@ -355,25 +373,33 @@ class Universo:
         event_probe_escape_velocity.terminal = False
         event_probe_escape_velocity.direction = 1
 
+        def event_aphelion(t, y):
+            #pra achar o aphelion entre probe e fixed_body
+            #como o return_pos e return_vel tao retornando listas vou deixar assim, mas seria só deixar um paramtro pra isso, daqueles blabla=normal
+            fixed_body_pos = np.array([self.corpos_celestes[self.fixed_body_index].pos_x, self.corpos_celestes[self.fixed_body_index].pos_y])
+            fixed_body_vel = np.array([self.corpos_celestes[self.fixed_body_index].vel_x, self.corpos_celestes[self.fixed_body_index].vel_y])
+            probe_pos = None
+            probe_vel = None
+            ptr = 0
 
-        """
-        #a simple event that finished the code when t = 1e6
-        def event_test(t, y):
-            return t - 1e6
-        
-        #True to stop when happens and False to don't
-        event_test.terminal = False
-        event_test.direction = 1
+            for i in range(len(self.corpos_celestes)):
+                if i == self.fixed_body_index: 
+                    continue
+                elif i == self.probe_index: #Probe
+                    probe_pos = np.array([y[ptr], y[ptr+1]])
+                    probe_vel = np.array([y[ptr+2], y[ptr+3]])
+                ptr += 4
+                if probe_pos is not None and probe_vel is not None:
+                    r_rel = probe_pos - fixed_body_pos
+                    v_rel = probe_vel - fixed_body_vel
+                    return np.dot(r_rel, v_rel)
+            
+        event_aphelion.terminal = True
+        event_aphelion.direction = -1
 
-        return [event_closest_approach_earth, event_probe_escape_velocity, event_test]
-        #"""
-
-        return [event_closest_approach_earth, event_probe_escape_velocity]
-
-
-    #DONE 1: Adicionar manobra(maneuver)/impulso; (Inicialmente testar com valores fixos pra ver o efeito)
-    #manuever ta escrito errado
-    #pra testar uma manobra vai no simular e descomenta a que adicionei lá
+        return [event_aphelion]
+        return [event_closest_approach_earth, event_probe_escape_velocity, event_aphelion]
+    
 
     def maneuver_add(self, t, dvx, dvy):
         new_maneuver = {
@@ -407,11 +433,7 @@ class Universo:
                     #eu queria tentar manter o index na manobra pra visualizacao, mas daria pra subsituir por isso aqui
                     #if i == self.probe_index:
                     if i == maneuver["probe_index"]:
-                        #acho que naquela parte de turn do harpia tem um nome melhor pra isso
-                        rate1 = 1.0 / dt_tolerance
-                        rate2 = 2.0 / dt_tolerance
-                        rate3 = 1.0 / ( 2 * dt_tolerance)
-                        rate = rate3
+                        rate = 1.0 / ( 2 * dt_tolerance)
                         #dydt = dv --> dydt[ptr + 2] = dvx/dt, dydt[ptr + 3] = dvy/dt
                         dydt[ptr+2] += maneuver["dvx"] * rate
                         dydt[ptr+3] += maneuver["dvy"] * rate
@@ -423,11 +445,4 @@ class Universo:
                         break
 
                     ptr += 4
-        return dydt                
-
-
-
-"""
-TODO 2: Criar optimizer.py pra fazer a otimizacao
-TODO 3: Aplicar a otiimzação em si no resto do codigo
-"""
+        return dydt
