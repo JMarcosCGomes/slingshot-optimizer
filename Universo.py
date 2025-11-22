@@ -203,7 +203,8 @@ class Universo:
                 ptr += 4
         return current_states
 
-    
+
+    #se eu otimizar pra chegar numa posicao posso usar o clique novamente
     def simular_setup(self):
         posicao_inicial = self.capturar_posicao_inicial()
         if posicao_inicial is None:
@@ -211,24 +212,69 @@ class Universo:
             return None
 
 
-    def simular(self):
-        self.simular_setup()
+    def run_until_aphelion(self):
+        solve_ivp_parameters = self.get_solveivp_params(simulation_segment="initial")
+        sol1 = solve_ivp(**solve_ivp_parameters)
+        return sol1
+
+
+    def run_after_aphelion(self, new_y0):
+        solve_ivp_parameters = self.get_solveivp_params(simulation_segment="next", new_y0=new_y0)
+        sol2 = solve_ivp(**solve_ivp_parameters)
+        return sol2
+
+
+    #to optimizer in the future
+    def get_probe_v_indexes(self):
+        probe_vx_index = (self.probe_index-1)*4+2
+        probe_vy_index = (self.probe_index-1)*4+3
+        return probe_vx_index, probe_vy_index
+
+
+    #test if it'll work in the optimizer
+    def simular_teste(self):
+        dvx = 5e3
+        dvy = -5e3
+
+        sol1 = self.run_until_aphelion()
+
+        new_y0 = sol1.y[:, -1].copy()
+        probe_vx_index, probe_vy_index = self.get_probe_v_indexes()
+        new_y0[probe_vx_index] += dvx
+        new_y0[probe_vy_index] += dvy
+
+        sol2 = self.run_after_aphelion(new_y0=new_y0)
+
+        t_full = np.concatenate((sol1.t, sol2.t))
+        y_full = np.concatenate((sol1.y, sol2.y), axis=1)
+
+        solucao_array = y_full.T
+
+        #"""get trajectory trace
+        for step in range(len(t_full)):
+            y_in_t = solucao_array[step]
+            current_states = self.get_current_state(y_in_t)
+
+            for i, state in enumerate(current_states):
+                self.corpos_celestes[i].pos_x = state["pos_x"]
+                self.corpos_celestes[i].pos_y = state["pos_y"]
+                self.corpos_celestes[i].vel_x = state["vel_x"]
+                self.corpos_celestes[i].vel_y = state["vel_y"]
+                self.corpos_celestes[i].trace.append((state["pos_x"], state["pos_y"]))
+        #"""
+
+        return solucao_array
+    
+
+    def simular_simple(self):
+        #self.simular_setup()
 
         solve_ivp_parameters = self.get_solveivp_params(simulation_segment="initial")
         solucao1 = solve_ivp(**solve_ivp_parameters)
 
         new_y02 = solucao1.y[:, -1].copy() #ultimo estado
-        """
-        a ideia aqui é adicionar uma manobra de teste, causando um deltaV para o probe.
-        Dado que os estados do probe estão no index (self.probe_index - 1)*4 até (self.probe_index - 1)*4 {obs: tem um -1 ali porque o sol saiu dos indexes};
-          estados_finais = new_y02 -> new_y02[(self.probe_index - 1)*4] até new_y02[(self.probe_index - 1)*4+3]
-         achamos que a sua velocidade está em probe_vx = (self.probe_index - 1)*4+2, probe_vy = (self.probe_index - 1)*4+3;
-         Com isso resta apenas alterar a velocidade 
-        """
         deltavx = 5e2
         deltavy = -2e3
-        #new_y02[self.probe_index+2] += deltavx
-        #new_y02[self.probe_index+3] += deltavy
         new_y02[(self.probe_index-1)*4+2] += deltavx
         new_y02[(self.probe_index-1)*4+3] += deltavy
 
