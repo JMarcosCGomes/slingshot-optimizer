@@ -3,9 +3,8 @@ from Optimizer import Optimizer
 
 
 if __name__ == "__main__":
-    universo = Universo(intervalo_animacao=5)
-    #optimizer = Optimizer(max_dv=1e4, initial_guess=[0.0, 0.0])
-    optimizer = Optimizer(max_dv=5e3, initial_guess=[0.0, 0.0])
+    universo = Universo(planet_angle_deg=-125, intervalo_animacao=5)
+    optimizer = Optimizer(max_dv=4e3, initial_guess=[0.0, 0.0])
 
     # so pra ver as posicoes
     #teste = universo.simple_plot()
@@ -15,6 +14,7 @@ if __name__ == "__main__":
     #universo.animar(solucao)
 
     #with "manual" optimization, to visualize
+    #dv = [0.0, 0.0]
     dv = [4868, -128]
     sol = universo.simular_optimized(dv)
     universo.animar(sol)

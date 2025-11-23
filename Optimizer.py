@@ -4,7 +4,7 @@ from scipy.optimize import minimize
 
 class Optimizer:
 
-    def __init__(self, max_dv=5e4, initial_guess=[-2.5e4, -2.5e4]):
+    def __init__(self, max_dv=5e3, initial_guess=[0.0, 0.0]):
         self.max_dv = max_dv #integer / float 
         self.initial_guess = initial_guess #[guess_dvx, guess_dvy]
         self.constraint = ({'type': 'ineq', 'fun': self.dv_constraint},) #maybe an "set_cons?"

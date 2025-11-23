@@ -12,7 +12,8 @@ from scipy.integrate import solve_ivp
 
 
 class Universo:
-    def __init__(self, duracao_padrao=4e6, ganho_duracao=100, intervalo_animacao=100):
+    def __init__(self, planet_angle_deg=0, duracao_padrao=4e6, ganho_duracao=100, intervalo_animacao=100):
+        self.planet_angle_deg = planet_angle_deg
         self.G = 6.67430e-11
         self.duracao = duracao_padrao * ganho_duracao
         self.intervalo_animacao = intervalo_animacao
@@ -35,7 +36,7 @@ class Universo:
         self.fixed_body_name = self.corpos_celestes[self.fixed_body_index].name
         
         # === Terra ===
-        self.Terra = Corpo_Celeste(massa=5.972e24, raio=6.371e6, color="blue", name="Terra", orbit_radius=1.49e11, angle_deg=-125,wir_id=self.fixed_body_index)
+        self.Terra = Corpo_Celeste(massa=5.972e24, raio=6.371e6, color="blue", name="Terra", orbit_radius=1.49e11, angle_deg=self.planet_angle_deg,wir_id=self.fixed_body_index)
         covp = self.corpos_celestes[self.Terra.wir_id].return_cov_parameters()
         self.Terra.vel_x, self.Terra.vel_y = self.Terra.Calculate_Orbital_Velocity(**covp)
         self.corpos_celestes.append(self.Terra)
