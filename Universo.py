@@ -232,9 +232,10 @@ class Universo:
 
 
     #test if it'll work in the optimizer
-    def simular_teste(self):
-        dvx = 5e3
-        dvy = -5e3
+    def simular_optimized(self, params):
+        dvx, dvy = params
+        #dvx = 5e3
+        #dvy = -5e3
 
         sol1 = self.run_until_aphelion()
 
@@ -316,28 +317,38 @@ class Universo:
     
 
     def get_solveivp_params(self, simulation_segment, new_y0=None):
+        #fazer uma self.coisa pra ver se ta otimizando ou não, quando n ta otimizando eu queria ver melhor esse slingshot
         #events = self.create_event_functions()
-        t_eval = np.linspace(0, self.duracao, 20000)
+        #t_eval = np.linspace(0, self.duracao, 20000)
         
         #simulation segment can be. initial: events are event_aphelion; next: for now events: None
         if simulation_segment == "initial":
-            events = self.create_event_functions()
+            t_max =  self.duracao
+            t_eval = np.linspace(0, t_max, 20000)
             y0 = self.y0
+            events = self.create_event_functions()
+
         elif simulation_segment == "next":
-            events = None
+            UMANOEMEIO = 7.884e7
+            DOISANOSEMEIO = 4.73e7
+            t_max = UMANOEMEIO
+            #t_max = self.duracao/4
+            ratio = t_max / self.duracao
+            t_eval = np.linspace(0, t_max, int(20000 * ratio))
             y0 = new_y0
+            events = None #i could use an "event time cap here"
         else:
             print("YOU FAILED, error in get_solveivp_params, unexpected simulation_segment")
 
         sivp_params = {
             "fun": self.equacoes_movimento,
-            "t_span": (0, self.duracao),
+            "t_span": (0, t_max),
             "y0": y0,
             "method": 'RK45', 
             "t_eval": t_eval,
             "events": events,
             "dense_output": True,
-            "max_step": 86400/4, #isso dá 1/4 dia por passo
+            "max_step": 86400, #isso dá 1/1 dia por passo. 
             "rtol": 1e-9,
             "atol": 1e-12,
         }
