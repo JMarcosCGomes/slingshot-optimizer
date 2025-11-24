@@ -44,26 +44,28 @@ class Universo:
         self.planet_name = self.corpos_celestes[self.planet_index].name
 
         # === Probe ===
-        #pro foguete (que lanca o probe) tambem ir na mesma direcao da velocidade da terra
-        planet_vel_angle_rad = math.atan2(self.corpos_celestes[self.planet_index].vel_y, self.corpos_celestes[self.planet_index].vel_x)
-        planet_vel_angle_deg = math.degrees(planet_vel_angle_rad)
+        #pro foguete (que lanca o probe) ir na frente do planeta
+        planet_toprobe_angle_rad = math.atan2(self.corpos_celestes[self.planet_index].pos_y, self.corpos_celestes[self.planet_index].pos_x)
+        #planet_toprobe_angle_deg = math.degrees(planet_toprobe_angle_rad)
+        planet_vel = [self.corpos_celestes[self.planet_index].vel_x, self.corpos_celestes[self.planet_index].vel_y]
+        planet_vel_norm = np.linalg.norm(planet_vel)
+        unit_tangent = planet_vel / planet_vel_norm
+        probe_angle_rad = math.atan2(unit_tangent[1], unit_tangent[0])
+        probe_angle_deg = math.degrees(probe_angle_rad)
 
         rocket_vel_module = 5.8e3
-        rocket_vel_x = rocket_vel_module * np.sin(planet_vel_angle_deg)
-        rocket_vel_y = rocket_vel_module * np.cos(planet_vel_angle_deg)
-
-
+        rocket_vel = rocket_vel_module * unit_tangent
         #roda mas demora mt, o bom seria colocar a distancia como 1e7 ou 1e7, mas acho que deve ficar MUITO lento
         test_or1 = 5.0e7
         #roda e demora menos
         test_or2 = 2.0e8
 
         test_or = test_or2
-        self.Probe = Corpo_Celeste(massa=5.9e6, raio=5e2, color="yellow", name="Probe", orbit_radius=test_or, angle_deg=planet_vel_angle_deg, wir_id=self.planet_index, is_orbiting=False)
+        self.Probe = Corpo_Celeste(massa=5.9e6, raio=5e2, color="yellow", name="Probe", orbit_radius=test_or, angle_deg=probe_angle_deg, wir_id=self.planet_index, is_orbiting=False)
         self.Probe.pos_x += self.Terra.pos_x
         self.Probe.pos_y += self.Terra.pos_y
-        self.Probe.vel_x = self.corpos_celestes[self.planet_index].vel_x + rocket_vel_x
-        self.Probe.vel_y = self.corpos_celestes[self.planet_index].vel_y + rocket_vel_y
+        self.Probe.vel_x = self.corpos_celestes[self.planet_index].vel_x + rocket_vel[0]
+        self.Probe.vel_y = self.corpos_celestes[self.planet_index].vel_y + rocket_vel[1]
         self.corpos_celestes.append(self.Probe)
         self.probe_index = len(self.corpos_celestes) - 1
         self.probe_name = self.corpos_celestes[self.probe_index].name
@@ -461,10 +463,11 @@ class Universo:
         event_probe_escape_velocity.direction = 1
 
         def event_aphelion(t, y):
+            #ERA PRA SER RELACIONADO A TERRA
             #pra achar o aphelion entre probe e fixed_body
             #como o return_pos e return_vel tao retornando listas vou deixar assim, mas seria só deixar um paramtro pra isso, daqueles blabla=normal
-            fixed_body_pos = np.array([self.corpos_celestes[self.fixed_body_index].pos_x, self.corpos_celestes[self.fixed_body_index].pos_y])
-            fixed_body_vel = np.array([self.corpos_celestes[self.fixed_body_index].vel_x, self.corpos_celestes[self.fixed_body_index].vel_y])
+            #fixed_body_pos = np.array([self.corpos_celestes[self.fixed_body_index].pos_x, self.corpos_celestes[self.fixed_body_index].pos_y])
+            #fixed_body_vel = np.array([self.corpos_celestes[self.fixed_body_index].vel_x, self.corpos_celestes[self.fixed_body_index].vel_y])
             probe_pos = None
             probe_vel = None
             ptr = 0
@@ -472,13 +475,16 @@ class Universo:
             for i in range(len(self.corpos_celestes)):
                 if i == self.fixed_body_index: 
                     continue
+                if i == self.planet_index:
+                    planet_pos = np.array([y[ptr], y[ptr+1]])
+                    planet_vel = np.array([y[ptr+2], y[ptr+3]])
                 elif i == self.probe_index: #Probe
                     probe_pos = np.array([y[ptr], y[ptr+1]])
                     probe_vel = np.array([y[ptr+2], y[ptr+3]])
                 ptr += 4
                 if probe_pos is not None and probe_vel is not None:
-                    r_rel = probe_pos - fixed_body_pos
-                    v_rel = probe_vel - fixed_body_vel
+                    r_rel = probe_pos - planet_pos
+                    v_rel = probe_vel - planet_vel
                     return np.dot(r_rel, v_rel)
             
         event_aphelion.terminal = True
