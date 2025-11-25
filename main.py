@@ -31,18 +31,18 @@ if __name__ == "__main__":
 
 
 """
-Universo - get_solveivp_params  - max_step = 86400
-PLANET_ANGLE_DEG = -50 
+MAX_STEP_SOLVEIVP = day_in_seconds / 4
+PLANET_ANGLE_DEG = -120
+'eps': 4.0, (obs: esp 5 improved)
 
-attempt: 89
-dvx: 2985.0822615220627
-dvy: 765.9270087066627
-energy: 285229758.7288369
-Minimal distance: 18047242.278514884
-Report: OPTIMIZING SLINGSHOT | Score: -194.99354733626245
+attempt: 97
+dvx: -300.6846277367216
+dvy: -2235.1855204010185
+energy: -12930885.513949633
+Minimal distance: 96280125.26643053
+Score: 504.6992088376943
 """
 
-#TODO URGENTE, CONSERTA MAX_STEP, bota que nem max_dv e planet_angledeg, passa como parametro pro universo (se n tiver, max_step fica 1 dia mesmo)
 #TODO Menos urgente, aumenta o peso, pelos logs recentes o otimizador toda hora ta saindo de perto da terra
 #TODO Igualmente urgente, acho que é o eps mt alto, acho que os pesos ja fazem o bastante
 #TODO Testar métodos diferentes, mesmo achando que o SLSQP é melhor pra esse caso

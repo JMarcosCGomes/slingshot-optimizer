@@ -70,26 +70,21 @@ class Optimizer:
 
         energy_weight = 1e-6
         score_energy = - energy * energy_weight
-        distance_weight = 5e-5
-        score_distance = minimal_distance * distance_weight
-
-        planet_radius = self.universo.corpos_celestes[self.universo.planet_index].raio
-        come_closer_range = 3e7
-        total_distance = planet_radius + come_closer_range
-
-        if minimal_distance > total_distance:
-            score = score_distance * 12
-            report = "GOING TO PLANET"
-        else:
-            score = score_energy + (score_distance/8)
-            report = "OPTIMIZING SLINGSHOT"
+        
+        log_distance = np.log10(minimal_distance)
+        penalty_factor = 5e2
+        #minimal_distance=1e7 -> log_distance = 7.0
+        distance_penalty = max(0, (log_distance - 7.0)) * penalty_factor
+        score = score_energy + distance_penalty
+        
 
         print(f"attempt: {self.optimization_attempts}")
         print(f"dvx: {dvx}")
         print(f"dvy: {dvy}")
         print(f"energy: {energy}")
         print(f"Minimal distance: {minimal_distance}")
-        print(f"Report: {report} | Score: {score}")
+        #print(f"Report: {report} | Score: {score}")
+        print(f"Score: {score}")
         print("------------------")
         return score
 
@@ -131,7 +126,7 @@ class Optimizer:
             'maxiter': maxiter,
             'ftol': ftol,
             'disp': True,
-            'eps': 4.0,
+            'eps': 5.0,
         }
 
         options_trustconstr = {
