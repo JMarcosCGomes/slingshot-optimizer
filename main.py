@@ -1,12 +1,14 @@
 from Universo import Universo
 from Optimizer import Optimizer
 
-PLANET_ANGLE_DEG = -50
+PLANET_ANGLE_DEG = -120
 MAX_DV = 4e3
+day_in_seconds = 86400
+MAX_STEP_SOLVEIVP = day_in_seconds / 4
 
 if __name__ == "__main__":
-    universo = Universo(planet_angle_deg=PLANET_ANGLE_DEG, intervalo_animacao=5)
-    optimizer = Optimizer(planet_angle_deg=PLANET_ANGLE_DEG, max_dv=MAX_DV, initial_guess=[0.0, 0.0])
+    universo = Universo(planet_angle_deg=PLANET_ANGLE_DEG, max_step=MAX_STEP_SOLVEIVP, intervalo_animacao=5)
+    optimizer = Optimizer(planet_angle_deg=PLANET_ANGLE_DEG, max_step=MAX_STEP_SOLVEIVP, max_dv=MAX_DV, initial_guess=[0.0, 0.0])
 
     # so pra ver as posicoes
     #teste = universo.simple_plot()

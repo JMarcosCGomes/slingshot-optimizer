@@ -12,8 +12,9 @@ from scipy.integrate import solve_ivp
 
 
 class Universo:
-    def __init__(self, planet_angle_deg=0, duracao_padrao=4e6, ganho_duracao=100, intervalo_animacao=100):
+    def __init__(self, planet_angle_deg=0, max_step = 86400, duracao_padrao=4e6, ganho_duracao=100, intervalo_animacao=100):
         self.planet_angle_deg = planet_angle_deg
+        self.max_step = max_step
         self.G = 6.67430e-11
         self.duracao = duracao_padrao * ganho_duracao
         self.intervalo_animacao = intervalo_animacao
@@ -351,7 +352,7 @@ class Universo:
             "t_eval": t_eval,
             "events": events,
             "dense_output": True,
-            "max_step": 86400, #isso dá 1/1 dia por passo. 
+            "max_step": self.max_step, #aqui eh onde aumenta pra ver melhor a lua orbitando por exemplo 
             "rtol": 1e-9,
             "atol": 1e-12,
         }
