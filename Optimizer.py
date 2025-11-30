@@ -5,7 +5,7 @@ from scipy.optimize import minimize
 class Optimizer:
 
     def __init__(self, planet_angle_deg=0, max_step = 86400, max_dv=5e3, initial_guess=[0.0, 0.0]):
-        self.max_dv = max_dv #integer / float 
+        self.max_dv = max_dv
         self.initial_guess = initial_guess #[guess_dvx, guess_dvy]
         self.optimization_attempts = 0
         #cache
@@ -77,15 +77,17 @@ class Optimizer:
         distance_penalty = max(0, (log_distance - 7.0)) * penalty_factor
         score = score_energy + distance_penalty
         
-
+        #if you don't want logs, just comment this parte
+        #VVVV
         print(f"attempt: {self.optimization_attempts}")
         print(f"dvx: {dvx}")
         print(f"dvy: {dvy}")
         print(f"energy: {energy}")
         print(f"Minimal distance: {minimal_distance}")
-        #print(f"Report: {report} | Score: {score}")
         print(f"Score: {score}")
         print("------------------")
+        #^^^^
+
         return score
 
 
@@ -118,52 +120,26 @@ class Optimizer:
         self.constraints = (constraint_dv, constraint_planet_collision)
 
     def optimize(self, maxiter=120, ftol=1e-4): 
-        #methods_to_test = ['SLSQP', 'trust-constr']
-        methods_to_test = ['SLSQP']
-        
         bounds = [(-self.max_dv, self.max_dv), (-self.max_dv, self.max_dv)]
+
+        method = 'SLSQP'
         options_slsqp = {
             'maxiter': maxiter,
             'ftol': ftol,
-            'disp': True,
+            #'disp': True,
             'eps': 5.0,
         }
+        options = options_slsqp
 
-        options_trustconstr = {
-            "maxiter": maxiter,
-            "verbose": 0,
-            "gtol": 1e-4,
-        }
+        res = minimize(self.objective, self.initial_guess, method=method, bounds=bounds, constraints=self.constraints, options=options)
+        self.final_score = -res.fun
+        self.best_dv = res.x #dvx, dvy
 
-        results = {}
-        
-        for method in methods_to_test:
-
-            if method == 'SLSQP':
-                options = options_slsqp
-            elif method == 'trust-constr':
-                options = options_trustconstr
-
-            print("|||||||||||||||||||")
-            print(f"METHOD: {method}")
-            print("VVVVVVVVVVVVVVVVVVV")
-
-            res = minimize(self.objective, self.initial_guess, method=method, bounds=bounds, constraints=self.constraints, options=options)
-            final_score = -res.fun
-            results[method] = (res.x, final_score)
-
-            print("==============================================================")
-            print(f"METHOD: {method} | best_dv = {res.x}, final_velocity = {final_score}")
-            print("==============================================================")
-
-            self.optimization_attempts = 0
 
         print("================= SUMMARY =================")
-        for method, (dv, fs) in results.items():
-            print(f"{method}: dv={dv}, final_score={fs}")
-        print("================= BEST METHOD =================") 
-        best_method = max(results.items(), key=lambda kv: kv[1][1]) #[1][1] eh final_value
-        print(f"BEST METHOD FOUND: {best_method[0]}")
-        
-        self.best_dv = best_method[1][0]
+        print(f"Method: {method}")
+        print(f"best deltaV: {self.best_dv}")
+        print(f"final score (energy - log(minimal_distance): {self.final_score}")
+        print("============ END OF OPTIMIZATION ============") 
+
         return self.best_dv

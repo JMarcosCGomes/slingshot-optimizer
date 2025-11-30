@@ -17,7 +17,7 @@ if __name__ == "__main__":
     #solucao = universo.simular_simple()
     #universo.animar(solucao)
 
-    #with "manual" optimization, to visualize
+    #with "manual" deltav, to visualize
     #dv = [0.0, 0.0]
     #dv = [2985, 765]
     #sol = universo.simular_optimized(dv)
@@ -42,7 +42,3 @@ energy: -12930885.513949633
 Minimal distance: 96280125.26643053
 Score: 504.6992088376943
 """
-
-#TODO Menos urgente, aumenta o peso, pelos logs recentes o otimizador toda hora ta saindo de perto da terra
-#TODO Igualmente urgente, acho que é o eps mt alto, acho que os pesos ja fazem o bastante
-#TODO Testar métodos diferentes, mesmo achando que o SLSQP é melhor pra esse caso

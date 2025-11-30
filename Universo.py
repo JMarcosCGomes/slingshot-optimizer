@@ -46,8 +46,6 @@ class Universo:
 
         # === Probe ===
         #pro foguete (que lanca o probe) ir na frente do planeta
-        planet_toprobe_angle_rad = math.atan2(self.corpos_celestes[self.planet_index].pos_y, self.corpos_celestes[self.planet_index].pos_x)
-        #planet_toprobe_angle_deg = math.degrees(planet_toprobe_angle_rad)
         planet_vel = [self.corpos_celestes[self.planet_index].vel_x, self.corpos_celestes[self.planet_index].vel_y]
         planet_vel_norm = np.linalg.norm(planet_vel)
         unit_tangent = planet_vel / planet_vel_norm
@@ -56,9 +54,6 @@ class Universo:
 
         rocket_vel_module = 5.8e3
         rocket_vel = rocket_vel_module * unit_tangent
-        #roda mas demora mt, o bom seria colocar a distancia como 1e7 ou 1e7, mas acho que deve ficar MUITO lento
-        test_or1 = 5.0e7
-        #roda e demora menos
         test_or2 = 2.0e8
 
         test_or = test_or2
@@ -208,14 +203,6 @@ class Universo:
         return current_states
 
 
-    #se eu otimizar pra chegar numa posicao posso usar o clique novamente
-    def simular_setup(self):
-        posicao_inicial = self.capturar_posicao_inicial()
-        if posicao_inicial is None:
-            print("Nenhum clique detectado.")
-            return None
-
-
     def run_until_aphelion(self):
         solve_ivp_parameters = self.get_solveivp_params(simulation_segment="initial")
         sol1 = solve_ivp(**solve_ivp_parameters)
@@ -228,7 +215,6 @@ class Universo:
         return sol2
 
 
-    #to optimizer in the future
     def get_probe_v_indexes(self):
         probe_vx_index = (self.probe_index-1)*4+2
         probe_vy_index = (self.probe_index-1)*4+3
@@ -238,8 +224,6 @@ class Universo:
     #test if it'll work in the optimizer
     def simular_optimized(self, params):
         dvx, dvy = params
-        #dvx = 5e3
-        #dvy = -5e3
 
         sol1 = self.run_until_aphelion()
 
@@ -255,7 +239,6 @@ class Universo:
 
         solucao_array = y_full.T
 
-        #"""get trajectory trace
         for step in range(len(t_full)):
             y_in_t = solucao_array[step]
             current_states = self.get_current_state(y_in_t)
@@ -266,13 +249,11 @@ class Universo:
                 self.corpos_celestes[i].vel_x = state["vel_x"]
                 self.corpos_celestes[i].vel_y = state["vel_y"]
                 self.corpos_celestes[i].trace.append((state["pos_x"], state["pos_y"]))
-        #"""
 
         return solucao_array
     
 
     def simular_simple(self):
-        #self.simular_setup()
 
         solve_ivp_parameters = self.get_solveivp_params(simulation_segment="initial")
         solucao1 = solve_ivp(**solve_ivp_parameters)
@@ -302,30 +283,10 @@ class Universo:
                 self.corpos_celestes[i].vel_y = state["vel_y"]
                 self.corpos_celestes[i].trace.append((state["pos_x"], state["pos_y"]))
 
-        """
-        #tem que iterar nas duas solucoes, faco isso depois se necessario
-
-        print("[INFO] DETECTED EVENTS")
-        print(f"[INFO] solucao.t_events: {solucao.t_events}")
-        if len(solucao.t_events) > 0:
-            print("[INFO] STATES IN EVENT:")
-            for idx_event, t_list in enumerate(solucao.t_events):
-                for t_event in t_list:
-                    state = solucao.sol(t_event)
-                    probe_x = state[self.probe_index*4]
-                    probe_y = state[self.probe_index*4 + 1]
-                    print(f"Event {idx_event} – t = {t_event:.2e} s – Probe ({probe_x:.3e}, {probe_y:.3e})")
-        """
-
         return solucao_array
     
 
     def get_solveivp_params(self, simulation_segment, new_y0=None):
-        #fazer uma self.coisa pra ver se ta otimizando ou não, quando n ta otimizando eu queria ver melhor esse slingshot
-        #events = self.create_event_functions()
-        #t_eval = np.linspace(0, self.duracao, 20000)
-        
-        #simulation segment can be. initial: events are event_aphelion; next: for now events: None
         if simulation_segment == "initial":
             t_max =  self.duracao
             t_eval = np.linspace(0, t_max, 20000)
@@ -336,11 +297,10 @@ class Universo:
             UMANOEMEIO = 7.884e7
             DOISANOSEMEIO = 4.73e7
             t_max = UMANOEMEIO
-            #t_max = self.duracao/4
             ratio = t_max / self.duracao
             t_eval = np.linspace(0, t_max, int(20000 * ratio))
             y0 = new_y0
-            events = None #i could use an "event time cap here"
+            events = None
         else:
             print("YOU FAILED, error in get_solveivp_params, unexpected simulation_segment")
 
@@ -401,74 +361,7 @@ class Universo:
 
     def create_event_functions(self):
     
-        def event_closest_approach_earth(t, y):
-
-            earth_pos = None
-            probe_pos = None
-
-            ptr = 0
-
-            #for i, cc in enumerate(self.corpos_celestes):
-            for i in range(len(self.corpos_celestes)):
-                if i == self.fixed_body_index:
-                    continue
-                
-                if i == self.planet_index: #planeta relacionada ao gravity assist
-                    earth_pos = np.array([y[ptr], y[ptr+1]])
-                elif i == self.probe_index: #Probe
-                    probe_pos = np.array([y[ptr], y[ptr+1]])
-                
-                ptr += 4
-
-            if (earth_pos is not None) and (probe_pos is not None):
-                distance = np.linalg.norm(probe_pos - earth_pos)
-                return distance - 1e8
-            
-            return 1e10
-
-        event_closest_approach_earth.terminal = False
-        event_closest_approach_earth.direction = -1
-
-        
-        def event_probe_escape_velocity(t, y):
-            ptr = 0
-            earth_pos = None
-            probe_pos = None
-            probe_vel = None
-
-            #for i, cc in enumerate(self.corpos_celestes):
-            for i in range(len(self.corpos_celestes)):
-
-                if i == self.fixed_body_index:
-                    continue
-                
-                if i == self.planet_index:
-                    earth_pos = np.array([y[ptr], y[ptr+1]])
-
-                elif i == self.probe_index:
-                    probe_pos = np.array([y[ptr], y[ptr+1]])
-                    probe_vel = np.array([y[ptr+2], y[ptr+3]])
-                ptr += 4
-
-            if earth_pos is not None and probe_pos is not None:
-                r_vec = probe_pos - earth_pos
-                r = np.linalg.norm(r_vec)
-                v = np.linalg.norm(probe_vel)
-                v_escape = np.sqrt(2 * self.G * self.Terra.massa / r)
-
-                return v - v_escape
-
-            return -1e10
-    
-        event_probe_escape_velocity.terminal = False
-        event_probe_escape_velocity.direction = 1
-
         def event_aphelion(t, y):
-            #ERA PRA SER RELACIONADO A TERRA
-            #pra achar o aphelion entre probe e fixed_body
-            #como o return_pos e return_vel tao retornando listas vou deixar assim, mas seria só deixar um paramtro pra isso, daqueles blabla=normal
-            #fixed_body_pos = np.array([self.corpos_celestes[self.fixed_body_index].pos_x, self.corpos_celestes[self.fixed_body_index].pos_y])
-            #fixed_body_vel = np.array([self.corpos_celestes[self.fixed_body_index].vel_x, self.corpos_celestes[self.fixed_body_index].vel_y])
             probe_pos = None
             probe_vel = None
             ptr = 0
@@ -492,5 +385,3 @@ class Universo:
         event_aphelion.direction = -1
 
         return [event_aphelion]
-        return [event_closest_approach_earth, event_probe_escape_velocity, event_aphelion]
-    
