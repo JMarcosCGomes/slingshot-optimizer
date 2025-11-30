@@ -203,9 +203,22 @@ class Universo:
         return current_states
 
 
-    def run_until_aphelion(self):
+    def run_until_aphelion(self, add_trace=False):
         solve_ivp_parameters = self.get_solveivp_params(simulation_segment="initial")
         sol1 = solve_ivp(**solve_ivp_parameters)
+
+        if add_trace == True:
+            solucao_array = sol1.y.T
+            for step in range(len(sol1.t)):
+                y_in_t = solucao_array[step]
+                current_states = self.get_current_state(y_in_t)
+                for i, state in enumerate(current_states):
+                    self.corpos_celestes[i].pos_x = state["pos_x"]
+                    self.corpos_celestes[i].pos_y = state["pos_y"]
+                    self.corpos_celestes[i].vel_x = state["vel_x"]
+                    self.corpos_celestes[i].vel_y = state["vel_y"]
+                    self.corpos_celestes[i].trace.append((state["pos_x"], state["pos_y"]))
+
         return sol1
 
 

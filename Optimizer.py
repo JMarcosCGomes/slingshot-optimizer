@@ -68,7 +68,7 @@ class Optimizer:
         dists = np.sqrt((probe_all_x - planet_all_x)**2 + (probe_all_y - planet_all_y)**2)
         minimal_distance = np.min(dists)
 
-        energy_weight = 1e-6
+        energy_weight = 2e-6
         score_energy = - energy * energy_weight
         
         log_distance = np.log10(minimal_distance)
