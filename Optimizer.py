@@ -41,7 +41,6 @@ class Optimizer:
         y_full = self.run_simulation_if_needed(params)
         final_y = y_full[:, -1]
         
-        #muito feio, talvez fazer uma funcao pra isso
         probe_final_x = final_y[(self.universo.probe_index-1)*4]
         probe_final_y = final_y[(self.universo.probe_index-1)*4+1]
         probe_final_vx = final_y[(self.universo.probe_index-1)*4+2]
@@ -57,7 +56,7 @@ class Optimizer:
         #energia mecanica especifica heliocentrica
         energy = (v_module**2)/2 - (mu_fixed_body / r_module)
 
-        #y parte 2
+        #y pós afélio
         y_p2 = self.sol2.y
         planet_id = self.universo.planet_index
         probe_id = self.universo.probe_index

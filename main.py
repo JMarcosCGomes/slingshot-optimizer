@@ -10,26 +10,25 @@ if __name__ == "__main__":
     universo = Universo(planet_angle_deg=PLANET_ANGLE_DEG, max_step=MAX_STEP_SOLVEIVP, intervalo_animacao=5)
     optimizer = Optimizer(planet_angle_deg=PLANET_ANGLE_DEG, max_step=MAX_STEP_SOLVEIVP, max_dv=MAX_DV, initial_guess=[0.0, 0.0])
 
-    # so pra ver as posicoes
+    #Mostra as posições iniciais, caso queira ver a sonda inicialmente na frente da terra
     #teste = universo.simple_plot()
 
-    #to visualize the "aphelion event", with trace
+    #Se quiser ver quando acontece o afélio
     #sol = universo.run_until_aphelion(add_trace=True)
     #solucao_array = sol.y.T
     #universo.animar(solucao_array)
 
-    #without optimizing anything
+    #Apenas a simulação, sem deltaV nem otimização
     #solucao = universo.simular_simple()
     #universo.animar(solucao)
 
-    #with "manual" deltav, to visualize
+    #Caso queira visualizar novamente, ajuste dv para os valores encontramos numa otimização
     #dv = [0.0, 0.0]
     #dv = [-873, -2181]
     #sol = universo.simular_optimized(dv)
     #universo.animar(sol)
 
-
-    #with optimization, "reduce" max_steps from blabla/4 to blabla
+    #Otimizando e depois simulando
     dv = optimizer.optimize(maxiter=30)
     sol = universo.simular_optimized(dv)
     universo.animar(sol)
