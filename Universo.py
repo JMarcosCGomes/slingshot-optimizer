@@ -119,24 +119,6 @@ class Universo:
         plt.show()
 
 
-    def capturar_posicao_inicial(self):
-        fig, ax = plt.subplots(figsize=(15, 8))
-        self.criar_plot(ax)
-        ax.set_title('Clique para definir a posicao final desejada')
-        self.plotar_corpos_celestes(ax)
-        posicao = []
-
-        def clique(evento):
-            if evento.inaxes == ax:
-                posicao.append(evento.xdata)
-                posicao.append(evento.ydata)
-                plt.close()
-        fig.canvas.mpl_connect('button_press_event', clique)
-        plt.legend()
-        plt.show()
-        return posicao if len(posicao) == 2 else None
-
-
     # equacoes_movimento_setup
     def equacoes_movimento_setup(self, y):
         all_positions = []
@@ -307,9 +289,8 @@ class Universo:
             events = self.create_event_functions()
 
         elif simulation_segment == "next":
-            UMANOEMEIO = 7.884e7
-            DOISANOSEMEIO = 4.73e7
-            t_max = UMANOEMEIO
+            UMANO = 3.154e7
+            t_max = UMANO * 1.5
             ratio = t_max / self.duracao
             t_eval = np.linspace(0, t_max, int(20000 * ratio))
             y0 = new_y0

@@ -54,6 +54,7 @@ class Optimizer:
         v_module = np.sqrt(probe_final_vx**2 + probe_finaL_vy**2)
         mu_fixed_body = self.universo.G * self.universo.corpos_celestes[self.universo.fixed_body_index].massa
         #energia mecanica especifica heliocentrica
+        
         energy = (v_module**2)/2 - (mu_fixed_body / r_module)
 
         #y pós afélio
@@ -67,13 +68,13 @@ class Optimizer:
         dists = np.sqrt((probe_all_x - planet_all_x)**2 + (probe_all_y - planet_all_y)**2)
         minimal_distance = np.min(dists)
 
-        energy_weight = 2e-6
+        #a energia está nessa escala 200000000=2e8 xe8
+        energy_weight = 1e-8
         score_energy = - energy * energy_weight
         
         log_distance = np.log10(minimal_distance)
-        penalty_factor = 5e2
-        #minimal_distance=1e7 -> log_distance = 7.0
-        distance_penalty = max(0, (log_distance - 7.0)) * penalty_factor
+        penalty_factor = 5e1
+        distance_penalty = log_distance * penalty_factor
         score = score_energy + distance_penalty
         
         #if you don't want logs, just comment this parte
@@ -118,7 +119,7 @@ class Optimizer:
 
         self.constraints = (constraint_dv, constraint_planet_collision)
 
-    def optimize(self, maxiter=120, ftol=1e-4): 
+    def optimize(self, maxiter=120, ftol=1e-5): 
         bounds = [(-self.max_dv, self.max_dv), (-self.max_dv, self.max_dv)]
 
         method = 'SLSQP'
@@ -126,7 +127,7 @@ class Optimizer:
             'maxiter': maxiter,
             'ftol': ftol,
             #'disp': True,
-            'eps': 5.0,
+            'eps': 7.5,
         }
         options = options_slsqp
 
