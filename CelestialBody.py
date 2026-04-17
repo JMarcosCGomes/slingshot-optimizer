@@ -1,10 +1,10 @@
 import numpy as np
 
-class Corpo_Celeste:
+class CelestialBody:
 
-    def __init__(self, massa, raio, color, name, orbit_radius, angle_deg, wir_id=None, is_orbiting=True, vel_x=0.0, vel_y=0.0):
-        self.massa = massa
-        self.raio = raio
+    def __init__(self, mass, radius, color, name, orbit_radius, angle_deg, wir_id=None, is_orbiting=True, vel_x=0.0, vel_y=0.0):
+        self.mass = mass
+        self.radius = radius
         self.color = color
         self.name = name
         self.trace = []
@@ -20,22 +20,22 @@ class Corpo_Celeste:
 
     # essa funcao é pro equacoes_movimento
     # x, y, vx, vy = estado
-    def return_estado(self):
+    def get_state(self):
         info = [self.pos_x, self.pos_y, self.vel_x, self.vel_y]
         return info
 
-    def return_pos(self):
+    def get_pos(self):
         info = [self.pos_x, self.pos_y]
         return info
 
-    def return_vel(self):
+    def get_vel(self):
         info = [self.vel_x, self.vel_y]
         return info
 
     
-    def return_cov_parameters(self):
+    def get_cov_parameters(self):
         #se vai calcular a velocidade da terra com o sol você usa isso no sol pra pegar as infos
-        params = {"planet_mass": self.massa,
+        params = {"planet_mass": self.mass,
                   "planet_x": self.pos_x,
                   "planet_y": self.pos_y,
                   "planet_vx": self.vel_x,
@@ -50,15 +50,15 @@ class Corpo_Celeste:
         vector_planet_satelite = np.array([self.pos_x - planet_x, self.pos_y - planet_y])
         real_distance = np.linalg.norm(vector_planet_satelite) #norma
         speed_module = np.sqrt(const_G * planet_mass / real_distance)
-        direcao_tangente = np.array([-vector_planet_satelite[1], vector_planet_satelite[0]]) / real_distance
-        relative_speed = direcao_tangente * speed_module
+        tangent_unit_vector = np.array([-vector_planet_satelite[1], vector_planet_satelite[0]]) / real_distance
+        relative_speed = tangent_unit_vector * speed_module
         resultant_speed_x = v_planet[0] + relative_speed[0]
         resultant_speed_y = v_planet[1] + relative_speed[1]
 
         return resultant_speed_x, resultant_speed_y
 
 
-#self.Planet = Corpo_Celeste(massa=pmass, raio=praio, color=pcolor, name=pname, orbit_radius=por, angle_deg=pad, wir_id=self.corpos_celestes.index(self.Pwir))
+#self.Planet = Corpo_Celeste(mass=pmass, raio=praio, color=pcolor, name=pname, orbit_radius=por, angle_deg=pad, wir_id=self.corpos_celestes.index(self.Pwir))
 #self.Planet.pos_x += self.Pwir.pos_x
 #self.Planet.pos_y += self.Pwir.pos_y
 #covp = self.corpos_celestes[self.Planet.wir_id].return_cov_parameters()

@@ -1,4 +1,4 @@
-from Universo import Universo
+from Universe import Universe
 import numpy as np
 from scipy.optimize import minimize
 
@@ -12,8 +12,8 @@ class Optimizer:
         self.last_params = None
         self.last_y_full = None 
         #universe setup
-        self.universo = Universo(planet_angle_deg=planet_angle_deg, max_step=max_step)
-        self.sol1 = self.universo.run_until_aphelion()
+        self.universe = Universe(planet_angle_deg=planet_angle_deg, max_step=max_step)
+        self.sol1 = self.universe.run_until_aphelion()
         self.post_aphelion_y = self.sol1.y[:, -1].copy()
         #constraints
         self.set_constraints()
@@ -24,11 +24,11 @@ class Optimizer:
             return self.last_y_full
         dvx, dvy = params
         post_aphelion_y = self.post_aphelion_y.copy()
-        post_aphelion_y[(self.universo.probe_index-1)*4+2] += dvx
-        post_aphelion_y[(self.universo.probe_index-1)*4+3] += dvy
+        post_aphelion_y[(self.universe.probe_index-1)*4+2] += dvx
+        post_aphelion_y[(self.universe.probe_index-1)*4+3] += dvy
 
         #preciso dele pra pegar a distancia do pos aphelion
-        self.sol2 = self.universo.run_after_aphelion(new_y0=post_aphelion_y)
+        self.sol2 = self.universe.run_after_aphelion(new_y0=post_aphelion_y)
         y_full = np.concatenate((self.sol1.y, self.sol2.y), axis=1)
         self.last_params = params.copy()
         self.last_y_full = y_full
@@ -41,26 +41,26 @@ class Optimizer:
         y_full = self.run_simulation_if_needed(params)
         final_y = y_full[:, -1]
         
-        probe_final_x = final_y[(self.universo.probe_index-1)*4]
-        probe_final_y = final_y[(self.universo.probe_index-1)*4+1]
-        probe_final_vx = final_y[(self.universo.probe_index-1)*4+2]
-        probe_finaL_vy = final_y[(self.universo.probe_index-1)*4+3]
-        fixed_body_x = self.universo.corpos_celestes[self.universo.fixed_body_index].pos_x
-        fixed_body_y = self.universo.corpos_celestes[self.universo.fixed_body_index].pos_y
+        probe_final_x = final_y[(self.universe.probe_index-1)*4]
+        probe_final_y = final_y[(self.universe.probe_index-1)*4+1]
+        probe_final_vx = final_y[(self.universe.probe_index-1)*4+2]
+        probe_finaL_vy = final_y[(self.universe.probe_index-1)*4+3]
+        fixed_body_x = self.universe.celestial_bodies[self.universe.fixed_body_index].pos_x
+        fixed_body_y = self.universe.celestial_bodies[self.universe.fixed_body_index].pos_y
 
         dx = probe_final_x - fixed_body_x
         dy = probe_final_y - fixed_body_y
         r_module = np.sqrt(dx**2 + dy**2)
         v_module = np.sqrt(probe_final_vx**2 + probe_finaL_vy**2)
-        mu_fixed_body = self.universo.G * self.universo.corpos_celestes[self.universo.fixed_body_index].massa
+        mu_fixed_body = self.universe.G * self.universe.celestial_bodies[self.universe.fixed_body_index].mass
         #energia mecanica especifica heliocentrica
         
         energy = (v_module**2)/2 - (mu_fixed_body / r_module)
 
         #y pós afélio
         y_p2 = self.sol2.y
-        planet_id = self.universo.planet_index
-        probe_id = self.universo.probe_index
+        planet_id = self.universe.planet_index
+        probe_id = self.universe.probe_index
         probe_all_x = y_p2[(probe_id-1)*4]
         probe_all_y = y_p2[(probe_id-1)*4 + 1]
         planet_all_x = y_p2[(planet_id-1)*4]
@@ -96,8 +96,8 @@ class Optimizer:
     
 
     def planet_collision_constraint(self, params):
-        planet_id = self.universo.planet_index
-        probe_id = self.universo.probe_index
+        planet_id = self.universe.planet_index
+        probe_id = self.universe.probe_index
 
         y_full = self.run_simulation_if_needed(params)
 
@@ -107,7 +107,7 @@ class Optimizer:
         planet_all_y = y_full[(planet_id-1)*4 + 1]
         dist = np.sqrt((probe_all_x - planet_all_x)**2 + (probe_all_y - planet_all_y)**2)
         minimal_distance_found = np.min(dist)
-        planet_radius = self.universo.corpos_celestes[self.universo.planet_index].raio
+        planet_radius = self.universe.celestial_bodies[self.universe.planet_index].radius
         safety_margin = 2e6
         
         return minimal_distance_found - (planet_radius + safety_margin)
