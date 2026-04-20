@@ -1,26 +1,16 @@
 import numpy as np
 import math #for arctang
-import matplotlib as plt
-import matplotlib.pyplot as plt
-
-from matplotlib.animation import FuncAnimation
+from scipy.integrate import solve_ivp
 
 from CelestialBody import CelestialBody
 
-from scipy.integrate import solve_ivp
-
-
 
 class Universe:
-    def __init__(self, planet_angle_deg=0, max_step = 86400, default_duration=4e6, duration_multiplier=100, animation_interval=100):
+    def __init__(self, planet_angle_deg=0, max_step = 86400, duration=4e8):
         self.planet_angle_deg = planet_angle_deg
         self.max_step = max_step
         self.G = 6.67430e-11
-        self.duration = default_duration * duration_multiplier
-        self.animation_interval = animation_interval
-        self.limit_x = 4e11
-        self.limit_y = 4e11
-        self.maneuver = []
+        self.duration = duration
         self.create_celestial_bodies()
 
 
@@ -90,33 +80,9 @@ class Universe:
                 y0.extend(state)
         return np.array(y0)
     
-    
-    def create_plot(self, ax):
-        ax.set_xlim(-self.limit_x, self.limit_x)
-        ax.set_ylim(-self.limit_y, self.limit_y)
-        ax.set_aspect("equal", adjustable="datalim")
-        ax.set_facecolor("gray")
-        ax.set_title("Solar System")
-        ax.set_xlabel("X (m)")
-        ax.set_ylabel("Y (m)")
 
-
-    def plot_celestial_bodies(self, ax):
-
-        for cb in self.celestial_bodies:
-            if (cb.name == "Moon") | (cb.name == "Probe"):
-                ax.plot([cb.pos_x], [cb.pos_y], "o", markersize=6, label=f"{cb.name}", markerfacecolor=cb.color, markeredgecolor="black", markeredgewidth=1.0)
-            else:
-                ax.plot([cb.pos_x], [cb.pos_y], "o", markersize=12, label=f"{cb.name}", markerfacecolor=cb.color, markeredgecolor="black", markeredgewidth=1.0)
-
-
-    def simple_plot(self):
-        fig, ax = plt.subplots(figsize=(15, 8))
-        self.create_plot(ax)
-        self.plot_celestial_bodies(ax)
-        ax.set_title("Plot simples para visualizar as posicoes iniciais")
-        plt.legend()
-        plt.show()
+    def get_celestial_bodies(self):
+        return self.celestial_bodies
 
 
     # equations_of_motion_setup
@@ -314,44 +280,6 @@ class Universe:
 
         return sivp_params
     
-
-    def animate(self, solution_array):
-            if solution_array is None:
-                print("[ERRO] solution_array chegou em universo.animate() vazio")
-                return
-
-            fig, ax = plt.subplots(figsize=(15, 8))
-            self.create_plot(ax)
-
-            t_eval = np.linspace(0, self.duration, len(solution_array))
-
-
-            lines = []
-            points = []
-            for cb in self.celestial_bodies:
-                (line,) = ax.plot([], [], "-", lw=1, color=cb.color, alpha=0.5)
-                if (cb.name == "Moon") | (cb.name == "Probe"):
-                    (point,) = ax.plot([],[],"o",markersize=6,label=f"{cb.name}",markerfacecolor=cb.color,markeredgecolor="black",markeredgewidth=1.0)
-                else:
-                    (point,) = ax.plot([],[],"o",markersize=12,label=f"{cb.name}",markerfacecolor=cb.color)
-                lines.append(line)
-                points.append(point)
-
-            def update(frame):
-
-                current_t = t_eval[frame]
-
-                current_states = self.get_current_state(solution_array[frame])
-                for i, cb in enumerate(self.celestial_bodies):
-                    lines[i].set_data([p[0] for p in cb.trace[:frame + 1]], [p[1] for p in cb.trace[:frame + 1]])
-                    points[i].set_data([current_states[i]["pos_x"]], [current_states[i]["pos_y"]])
-
-
-                return lines + points
-            anim = FuncAnimation(fig, update, frames=len(solution_array), interval=self.animation_interval, blit=False, repeat=False)
-            plt.legend()
-            plt.show()
-
 
     def create_event_functions(self):
     
