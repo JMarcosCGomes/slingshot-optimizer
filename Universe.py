@@ -139,34 +139,9 @@ class Universe:
         return dydt
 
 
-    def get_current_state(self, y_in_t):
-        current_states = []
-        ptr = 0
-        for i, cb in enumerate(self.celestial_bodies):
-            if i == self.fixed_body_index:
-                current_states.append({"pos_x": cb.pos_x, "pos_y": cb.pos_y, "vel_x": cb.vel_x, "vel_y": cb.vel_y})
-            else:
-                current_states.append({"pos_x": y_in_t[ptr], "pos_y": y_in_t[ptr + 1], "vel_x": y_in_t[ptr + 2], "vel_y": y_in_t[ptr + 3]})
-                ptr += 4
-        return current_states
-
-
-    def run_until_aphelion(self, add_trace=False):
+    def run_until_aphelion(self):
         solve_ivp_parameters = self.get_solveivp_params(simulation_segment="initial")
         sol1 = solve_ivp(**solve_ivp_parameters)
-
-        if add_trace == True:
-            solution_array = sol1.y.T
-            for step in range(len(sol1.t)):
-                y_in_t = solution_array[step]
-                current_states = self.get_current_state(y_in_t)
-                for i, state in enumerate(current_states):
-                    self.celestial_bodies[i].pos_x = state["pos_x"]
-                    self.celestial_bodies[i].pos_y = state["pos_y"]
-                    self.celestial_bodies[i].vel_x = state["vel_x"]
-                    self.celestial_bodies[i].vel_y = state["vel_y"]
-                    self.celestial_bodies[i].trace.append((state["pos_x"], state["pos_y"]))
-
         return sol1
 
 
@@ -200,17 +175,6 @@ class Universe:
 
         solution_array = y_full.T
 
-        for step in range(len(t_full)):
-            y_in_t = solution_array[step]
-            current_states = self.get_current_state(y_in_t)
-
-            for i, state in enumerate(current_states):
-                self.celestial_bodies[i].pos_x = state["pos_x"]
-                self.celestial_bodies[i].pos_y = state["pos_y"]
-                self.celestial_bodies[i].vel_x = state["vel_x"]
-                self.celestial_bodies[i].vel_y = state["vel_y"]
-                self.celestial_bodies[i].trace.append((state["pos_x"], state["pos_y"]))
-
         return solution_array
     
 
@@ -232,17 +196,6 @@ class Universe:
         y_full = np.concatenate((sol1.y, sol2.y), axis=1)
 
         solution_array = y_full.T
-
-        for step in range(len(t_full)):
-            y_in_t = solution_array[step]
-            current_states = self.get_current_state(y_in_t)
-
-            for i, state in enumerate(current_states):
-                self.celestial_bodies[i].pos_x = state["pos_x"]
-                self.celestial_bodies[i].pos_y = state["pos_y"]
-                self.celestial_bodies[i].vel_x = state["vel_x"]
-                self.celestial_bodies[i].vel_y = state["vel_y"]
-                self.celestial_bodies[i].trace.append((state["pos_x"], state["pos_y"]))
 
         return solution_array
     

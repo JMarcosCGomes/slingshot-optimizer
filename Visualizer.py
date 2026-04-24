@@ -64,14 +64,32 @@ class Visualizer():
         return current_states
 
 
-    def animate(self):
+    def build_traces(self, solution_array):
+        if self.celestial_bodies is None:
+            print("Visualizer.build_traces() error #1")
+            return
+        
+        for cb in self.celestial_bodies:
+            cb.trace = []
+        
+        for step in range(len(solution_array)):
+                y_in_t = solution_array[step]
+                current_states = self.get_current_state(y_in_t)
+                for i, state in enumerate(current_states):
+                    self.celestial_bodies[i].trace.append((state["pos_x"], state["pos_y"]))
+
+
+    def animate(self, add_trace=True):
         if (self.solution_array is None) or (self.celestial_bodies is None):
             print("Visualizer.animate() error #1")
             return
         
+        if add_trace:
+            self.build_traces(self.solution_array)
+
         fig, ax = plt.subplots(figsize=(15, 8))
         self.create_plot(ax)
-
+        
         lines = []
         points = []
         for cb in self.celestial_bodies:

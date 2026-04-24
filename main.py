@@ -21,15 +21,15 @@ if __name__ == "__main__":
     simple_plot = visualizer.simple_plot()
 
     #Se quiser ver quando acontece o afélio
-    #sol = universe.run_until_aphelion(add_trace=True)
+    #sol = universe.run_until_aphelion()
     #solution_array = sol.y.T
     #visualizer.set_solution_array(solution_array)
     #visualizer.animate()
 
     #Apenas a simulação, sem deltaV nem otimização
-    solution_array = universe.simulate_simple()
-    visualizer.set_solution_array(solution_array)
-    visualizer.animate()
+    #solution_array = universe.simulate_simple()
+    #visualizer.set_solution_array(solution_array)
+    #visualizer.animate()
 
     #Caso queira visualizar novamente, ajuste dv para os valores encontramos numa otimização
     #dv = [0.0, 0.0]
@@ -50,12 +50,13 @@ if __name__ == "__main__":
 
 #TODO #1 fazer README
 
-#TODO #2 tá feio Universe e Visualizer estarem utilizando get_current_state, não acho legal ficar assim.
-#TODO #3 também tem o trace que ta sendo feito no Universe, talvez dê pra jogar essa parte no Visualizer
-
-#TODO #4 Talvez criar um arquivo de parametros com as infos dos corpos celestes
+#TODO #2 Talvez criar um arquivo de parametros com as infos dos corpos celestes
 ## Além disso é possível depois colocar opção pra escolher os cb que ficam na sim, qual cb vai ter o probe por ex
-#TODO #5 Melhorar a iteração do create_celestial_bodies
-#TODO #6 Fazer uma função pra calcular a velocidade do probe, até acho que ajuda pra melhorar a iteração
+#TODO #3 Melhorar a iteração do create_celestial_bodies
+#TODO #4 Fazer uma função pra calcular a velocidade do probe, até acho que ajuda pra melhorar a iteração
 
-#TODO #7 melhorar a otimização, fazer em duas etapas
+#TODO #5 melhorar a otimização, fazer em duas etapas
+#TODO #? talvez dê pra fazer 1 otimização no afélio (2 etapas) e depois faço outra otimização no meio do caminho (mid-course correction)
+## só tem que definir bem o evento pra isso funcionar (ao entrar na esfera de influencia SOI talvez)
+
+#TODO #6 ver quais tipos de testes unitários seriam interessantes de adicionar
