@@ -15,7 +15,7 @@ if __name__ == "__main__":
     universe = Universe(planet_angle_deg=PLANET_ANGLE_DEG, max_step=MAX_STEP_SOLVEIVP, duration=DURATION)
     visualizer = Visualizer(animation_interval=5, duration=DURATION)
     visualizer.set_celestial_bodies(universe.get_celestial_bodies(), universe.fixed_body_index)
-    optimizer = Optimizer(planet_angle_deg=PLANET_ANGLE_DEG, max_step=MAX_STEP_SOLVEIVP, max_dv=MAX_DV, initial_guess=INITIAL_GUESS)
+    optimizer = Optimizer(universe=universe, max_dv=MAX_DV, initial_guess=INITIAL_GUESS)
 
     #Mostra as posições iniciais, caso queira ver a sonda inicialmente na frente da terra
     simple_plot = visualizer.simple_plot()

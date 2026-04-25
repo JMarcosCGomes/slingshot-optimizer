@@ -1,10 +1,9 @@
-from Universe import Universe
 import numpy as np
 from scipy.optimize import minimize
 
 class Optimizer:
 
-    def __init__(self, planet_angle_deg=0, max_step = 86400, max_dv=5e3, initial_guess=[0.0, 0.0]):
+    def __init__(self, universe, max_dv=5e3, initial_guess=[0.0, 0.0]):
         self.max_dv = max_dv
         self.initial_guess = initial_guess #[guess_dvx, guess_dvy]
         self.optimization_attempts = 0
@@ -12,7 +11,7 @@ class Optimizer:
         self.last_params = None
         self.last_y_full = None 
         #universe setup
-        self.universe = Universe(planet_angle_deg=planet_angle_deg, max_step=max_step)
+        self.universe = universe
         self.sol1 = self.universe.run_until_aphelion()
         self.post_aphelion_y = self.sol1.y[:, -1].copy()
         #constraints
