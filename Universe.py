@@ -1,72 +1,82 @@
 import numpy as np
-import math #for arctang
 from scipy.integrate import solve_ivp
 
 from CelestialBody import CelestialBody
 
 
 class Universe:
-    def __init__(self, planet_angle_deg=0, max_step = 86400, duration=4e8):
-        self.planet_angle_deg = planet_angle_deg
-        self.max_step = max_step
+    def __init__(self, config):
+        self.config = config
+        self.max_step = float(config["simulation"]["max_step"])
         self.G = 6.67430e-11
-        self.duration = duration
+        self.duration = float(config["simulation"]["duration"])
         self.create_celestial_bodies()
 
 
     def create_celestial_bodies(self):
-        # === Inicialização das listas ===
         self.celestial_bodies = []
         self.body_names = []
         self.body_masses = []
-        
-        # === Sun ===
-        self.Sun = CelestialBody(mass=2e30, radius=6.957e8, color="yellow", name="Sun", orbit_radius=0.0, angle_deg=0,)
-        self.celestial_bodies.append(self.Sun)
-        self.fixed_body_index = len(self.celestial_bodies) - 1
-        self.fixed_body_name = self.celestial_bodies[self.fixed_body_index].name
-        
-        # === Earth ===
-        self.Earth = CelestialBody(mass=5.972e24, radius=6.371e6, color="blue", name="Earth", orbit_radius=1.49e11, angle_deg=self.planet_angle_deg,wir_id=self.fixed_body_index)
-        covp = self.celestial_bodies[self.Earth.wir_id].get_cov_parameters()
-        self.Earth.vel_x, self.Earth.vel_y = self.Earth.Calculate_Orbital_Velocity(**covp)
-        self.celestial_bodies.append(self.Earth)
-        self.planet_index = len(self.celestial_bodies) - 1
-        self.planet_name = self.celestial_bodies[self.planet_index].name
 
-        # === Probe ===
-        #pro foguete (que lanca o probe) ir na frente do planeta
-        planet_vel = [self.celestial_bodies[self.planet_index].vel_x, self.celestial_bodies[self.planet_index].vel_y]
-        planet_vel_norm = np.linalg.norm(planet_vel)
-        unit_tangent = planet_vel / planet_vel_norm
-        probe_angle_rad = math.atan2(unit_tangent[1], unit_tangent[0])
-        probe_angle_deg = math.degrees(probe_angle_rad)
+        body_map = {} #used to iterate using wir names
+        #name, role, mass, radius, color, orbit_radius, angle_deg, wir, is_orbiting
+        for data in self.config["celestial_bodies"]:
+            cb = CelestialBody(
+                name=data["name"],
+                role=data["role"],
+                mass=float(data["mass"]),
+                radius=float(data["radius"]),
+                color=data["color"],
+                orbit_radius=float(data["orbit_radius"]),
+                angle_deg=data["angle_deg"],
+                wir=data["wir"],
+                is_orbiting=data["is_orbiting"],
+            )
 
-        rocket_vel_module = 5.8e3
-        rocket_vel = rocket_vel_module * unit_tangent
-        test_or2 = 2.0e8
-
-        test_or = test_or2
-        self.Probe = CelestialBody(mass=5.9e6, radius=5e2, color="yellow", name="Probe", orbit_radius=test_or, angle_deg=probe_angle_deg, wir_id=self.planet_index, is_orbiting=False)
-        self.Probe.pos_x += self.Earth.pos_x
-        self.Probe.pos_y += self.Earth.pos_y
-        self.Probe.vel_x = self.celestial_bodies[self.planet_index].vel_x + rocket_vel[0]
-        self.Probe.vel_y = self.celestial_bodies[self.planet_index].vel_y + rocket_vel[1]
-        self.celestial_bodies.append(self.Probe)
-        self.probe_index = len(self.celestial_bodies) - 1
-        self.probe_name = self.celestial_bodies[self.probe_index].name
-
-        # === Moon ===
-        self.Moon = CelestialBody(mass=7.346e22, radius=1.737e6, color="white", name="Moon", orbit_radius=3.84e8, angle_deg=30, wir_id=self.celestial_bodies.index(self.Earth))
-        self.Moon.pos_x += self.Earth.pos_x
-        self.Moon.pos_y += self.Earth.pos_y
-        covp = self.celestial_bodies[self.Moon.wir_id].get_cov_parameters()
-        self.Moon.vel_x, self.Moon.vel_y = self.Moon.Calculate_Orbital_Velocity(**covp)
-        self.celestial_bodies.append(self.Moon)
-
-        for cb in self.celestial_bodies:
+            self.celestial_bodies.append(cb)
             self.body_names.append(cb.name)
             self.body_masses.append(cb.mass)
+            body_map[cb.name] = cb
+            if cb.role == "fixed":
+                self.fixed_body_index = len(self.celestial_bodies) - 1
+            elif cb.role == "probe":
+                self.probe_index = len(self.celestial_bodies) - 1               
+        
+        #loop to set planets
+        for cb in self.celestial_bodies:
+            if cb.role in ("fixed", "probe", "satellite"):
+                continue
+            cb_wir = body_map[cb.wir]
+            cb.pos_x += cb_wir.pos_x
+            cb.pos_y += cb_wir.pos_y
+            if cb.is_orbiting:
+                covp = cb_wir.get_cov_parameters()
+                cb.vel_x, cb.vel_y = cb.Calculate_Orbital_Velocity(**covp)      
+
+        #role = probe or satellite
+        for cb in self.celestial_bodies:
+            if cb.role in ("fixed", "planet", "generic"):
+                continue
+            
+            if cb.role == "satellite":
+                cb_wir = body_map[cb.wir]
+                cb.pos_x += cb_wir.pos_x
+                cb.pos_y += cb_wir.pos_y
+                if cb.is_orbiting:
+                    covp = cb_wir.get_cov_parameters()
+                    cb.vel_x, cb.vel_y = cb.Calculate_Orbital_Velocity(**covp)   
+
+            elif cb.role == "probe":
+                cb_wir = body_map[cb.wir]
+                planet_vel = np.array(cb_wir.get_vel())
+                self.planet_index = self.celestial_bodies.index(cb_wir)
+                self.planet_name = cb_wir.name
+                launch_speed = 5.8e3
+                cb.angle_deg = cb.Calculate_Probe_Angle(planet_vel)
+                cb.pos_x, cb.pos_y = cb.Recalculate_Probe_Position(planet_vel)
+                cb.pos_x += cb_wir.pos_x
+                cb.pos_y += cb_wir.pos_y
+                cb.vel_x, cb.vel_y = cb.Calculate_Probe_Velocity(launch_speed, planet_vel)
 
         self.y0 = self.get_y0()
 
@@ -237,25 +247,25 @@ class Universe:
     def create_event_functions(self):
     
         def event_aphelion(t, y):
-            probe_pos = None
-            probe_vel = None
             ptr = 0
+            planet_pos = planet_vel = probe_pos = probe_vel = None
 
             for i in range(len(self.celestial_bodies)):
-                if i == self.fixed_body_index: 
+                if i == self.fixed_body_index:
                     continue
                 if i == self.planet_index:
                     planet_pos = np.array([y[ptr], y[ptr+1]])
                     planet_vel = np.array([y[ptr+2], y[ptr+3]])
-                elif i == self.probe_index: #Probe
+                elif i == self.probe_index:
                     probe_pos = np.array([y[ptr], y[ptr+1]])
                     probe_vel = np.array([y[ptr+2], y[ptr+3]])
                 ptr += 4
-                if probe_pos is not None and probe_vel is not None:
-                    r_rel = probe_pos - planet_pos
-                    v_rel = probe_vel - planet_vel
-                    return np.dot(r_rel, v_rel)
-            
+
+            r_rel = probe_pos - planet_pos
+            v_rel = probe_vel - planet_vel
+            return np.dot(r_rel, v_rel)
+
+
         event_aphelion.terminal = True
         event_aphelion.direction = -1
 

@@ -37,7 +37,7 @@ class Visualizer():
         
         else:
             for cb in self.celestial_bodies:
-                if (cb.name == "Moon") | (cb.name == "Probe"):
+                if (cb.role == "satellite") | (cb.role == "probe"):
                     ax.plot([cb.pos_x], [cb.pos_y], "o", markersize=6, label=f"{cb.name}", markerfacecolor=cb.color, markeredgecolor="black", markeredgewidth=1.0)
                 else:
                     ax.plot([cb.pos_x], [cb.pos_y], "o", markersize=12, label=f"{cb.name}", markerfacecolor=cb.color, markeredgecolor="black", markeredgewidth=1.0)
@@ -94,7 +94,7 @@ class Visualizer():
         points = []
         for cb in self.celestial_bodies:
             (line,) = ax.plot([], [], "-", lw=1, color=cb.color, alpha=0.5)
-            if (cb.name == "Moon") | (cb.name == "Probe"):
+            if (cb.role == "satellite") | (cb.role == "probe"):
                 (point,) = ax.plot([],[],"o",markersize=6,label=f"{cb.name}",markerfacecolor=cb.color,markeredgecolor="black",markeredgewidth=1.0)
             else:
                 (point,) = ax.plot([],[],"o",markersize=12,label=f"{cb.name}",markerfacecolor=cb.color)

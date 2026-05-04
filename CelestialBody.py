@@ -1,18 +1,20 @@
 import numpy as np
+import math
 
 class CelestialBody:
 
-    def __init__(self, mass, radius, color, name, orbit_radius, angle_deg, wir_id=None, is_orbiting=True, vel_x=0.0, vel_y=0.0):
+    def __init__(self, name, role, mass, radius, color, orbit_radius, angle_deg, wir=None, is_orbiting=True, vel_x=0.0, vel_y=0.0):
+        self.name = name
+        self.role = role
         self.mass = mass
         self.radius = radius
         self.color = color
-        self.name = name
         self.trace = []
         self.orbit_radius = orbit_radius
         self.angle_rad = np.deg2rad(angle_deg)
         self.pos_x = self.orbit_radius * np.cos(self.angle_rad)
         self.pos_y = self.orbit_radius * np.sin(self.angle_rad)
-        self.wir_id = wir_id #who is related id, lua e relacionada com a terra, marte é relacionado com o sol .. daria pra colocar nome mas preferi id
+        self.wir = wir #who is related id, lua e relacionada com a terra, marte é relacionado com o sol .. daria pra colocar nome mas preferi id
         self.is_orbiting = is_orbiting #isso aqui caso tenha um monte de cc e decidir adicionar no loop pra somar as posicoes e calcular velocidades
         self.vel_x = float(vel_x)
         self.vel_y = float(vel_y)
@@ -56,11 +58,29 @@ class CelestialBody:
         resultant_speed_y = v_planet[1] + relative_speed[1]
 
         return resultant_speed_x, resultant_speed_y
+    
+
+    def Calculate_Probe_Velocity(self, launch_speed, planet_vel):
+        planet_vel_norm = np.linalg.norm(planet_vel)
+        unit_tangent = planet_vel / planet_vel_norm
+        rocket_vel_module = launch_speed
+        rocket_vel = rocket_vel_module * unit_tangent
+        probe_vel_x = planet_vel[0] + rocket_vel[0]
+        probe_vel_y = planet_vel[1] + rocket_vel[1]
+        return [probe_vel_x, probe_vel_y]
 
 
-#self.Planet = Corpo_Celeste(mass=pmass, raio=praio, color=pcolor, name=pname, orbit_radius=por, angle_deg=pad, wir_id=self.corpos_celestes.index(self.Pwir))
-#self.Planet.pos_x += self.Pwir.pos_x
-#self.Planet.pos_y += self.Pwir.pos_y
-#covp = self.corpos_celestes[self.Planet.wir_id].return_cov_parameters()
-#self.Planet.vel_x, self.Planet.vel_y = self.Planet.Calculate_Orbital_Velocity(**covp)
-#self.corpos_celestes.append(self.Planet)
+    def Calculate_Probe_Angle(self, planet_vel):
+        planet_vel_norm = np.linalg.norm(planet_vel)
+        unit_tangent = planet_vel / planet_vel_norm
+        probe_angle_rad = math.atan2(unit_tangent[1], unit_tangent[0])
+        probe_angle_deg = math.degrees(probe_angle_rad)
+        return probe_angle_deg
+
+    
+    def Recalculate_Probe_Position(self, planet_vel):
+        self.angle_deg = self.Calculate_Probe_Angle(planet_vel)
+        self.angle_rad = np.deg2rad(self.angle_deg)
+        self.pos_x = self.orbit_radius * np.cos(self.angle_rad)
+        self.pos_y = self.orbit_radius * np.sin(self.angle_rad)
+        return [self.pos_x, self.pos_y]

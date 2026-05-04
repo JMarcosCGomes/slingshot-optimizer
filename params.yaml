@@ -1,0 +1,152 @@
+simulation:
+  duration: 4.0e8
+  max_step: 21600 # 86400 / 4
+
+optimizer:
+  max_dv: 4.0e3
+  initial_guess: [0.0, 0.0]
+
+
+#name: cb name
+#active: 
+#role: fixed, probe, planet, satellite, generic (vou ter que refatorar umas coisas pra trocar de generic pra planet)
+#mass: cb mass
+#radius: cb radius
+#color: cb color to visualization
+#orbit_radius: r   (x=rcos(theta), y=rsen(theta))
+#angle_deg: theta  (x=rcos(theta), y=rsen(theta))
+#wir: who is related (earth to sun, moon to earth, ..)
+#is_orbiting: if the cb is orbiting 'wir', to calculate orbital_velocity
+#launch_speed: probe specific param
+
+celestial_bodies:
+  - name: Sun
+    active: true
+    role: fixed
+    mass: 2.0e30
+    radius: 6.957e8
+    color: yellow
+    orbit_radius: 0.0
+    angle_deg: 0
+    wir: null
+    is_orbiting: false
+
+
+  - name: Probe
+    active: true
+    role: probe
+    mass: 5.9e6
+    radius: 5.0e2
+    color: yellow
+    orbit_radius: 2.0e8
+    angle_deg: 0.0
+    wir: Earth
+    is_orbiting: false
+
+
+  - name: Moon
+    active: true
+    role: satellite
+    mass: 7.346e22
+    radius: 1.737e6
+    color: white
+    orbit_radius: 3.84e8
+    angle_deg: 30
+    wir: Earth
+    is_orbiting: true
+
+
+  - name: Mercury
+    active: false
+    role: generic
+    mass: 3.301e23
+    radius: 2.4397e6
+    color: darkslategray
+    orbit_radius: 5.791e10
+    angle_deg: 20
+    wir: Sun
+    is_orbiting: true
+
+
+  - name: Venus
+    active: false
+    role: generic
+    mass: 4.867e24
+    radius: 6.0518e6
+    color: orange
+    orbit_radius: 1.082e11
+    angle_deg: -70
+    wir: Sun
+    is_orbiting: true
+
+
+  - name: Earth
+    active: true
+    role: planet
+    mass: 5.972e24
+    radius: 6.371e6
+    color: blue
+    orbit_radius: 1.49e11
+    angle_deg: -120
+    wir: Sun
+    is_orbiting: true
+
+
+  - name: Mars
+    active: false
+    role: generic
+    mass: 6.417e23
+    radius: 3.3962e6
+    color: red
+    orbit_radius: 2.279e11
+    angle_deg: 150
+    wir: Sun
+    is_orbiting: true
+
+
+  - name: Jupiter
+    active: false
+    role: generic
+    mass: 1.898e27
+    radius: 7.1492e7
+    color: peru
+    orbit_radius: 7.784e11
+    angle_deg: 0
+    wir: Sun
+    is_orbiting: true
+
+
+  - name: Saturn
+    active: false
+    role: generic
+    mass: 5.683e26
+    radius: 6.0268e7
+    color: khaki
+    orbit_radius: 1.432e12
+    angle_deg: 100
+    wir: Sun
+    is_orbiting: true
+
+
+  - name: Uranus
+    active: false
+    role: generic
+    mass: 8.681e25
+    radius: 2.5559e7
+    color: lightblue
+    orbit_radius: 2.867e12
+    angle_deg: -50
+    wir: Sun
+    is_orbiting: true
+
+
+  - name: Neptune
+    active: false
+    role: generic
+    mass: 1.024e26
+    radius: 2.4764e7
+    color: royalblue
+    orbit_radius: 4.515e12
+    angle_deg: 50
+    wir: Sun
+    is_orbiting: true

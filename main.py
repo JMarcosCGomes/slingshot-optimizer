@@ -1,21 +1,17 @@
 from Universe import Universe
 from Optimizer import Optimizer
 from Visualizer import Visualizer
+from load_params import load_config
 
-PLANET_ANGLE_DEG = -120
-MAX_DV = 4e3
-INITIAL_GUESS = [0.0, 0.0]
+config = load_config()
 
 DURATION = 4e8
 
-day_in_seconds = 86400
-MAX_STEP_SOLVEIVP = day_in_seconds / 4
-
 if __name__ == "__main__":
-    universe = Universe(planet_angle_deg=PLANET_ANGLE_DEG, max_step=MAX_STEP_SOLVEIVP, duration=DURATION)
+    universe = Universe(config=config)
     visualizer = Visualizer(animation_interval=5, duration=DURATION)
     visualizer.set_celestial_bodies(universe.get_celestial_bodies(), universe.fixed_body_index)
-    optimizer = Optimizer(universe=universe, max_dv=MAX_DV, initial_guess=INITIAL_GUESS)
+    optimizer = Optimizer(universe=universe, max_dv=config["optimizer"]["max_dv"], initial_guess=config["optimizer"]["initial_guess"])
 
     #Mostra as posições iniciais, caso queira ver a sonda inicialmente na frente da terra
     simple_plot = visualizer.simple_plot()
@@ -50,13 +46,10 @@ if __name__ == "__main__":
 
 #TODO #1 fazer README
 
-#TODO #2 Talvez criar um arquivo de parametros com as infos dos corpos celestes
-## Além disso é possível depois colocar opção pra escolher os cb que ficam na sim, qual cb vai ter o probe por ex
-#TODO #3 Melhorar a iteração do create_celestial_bodies
-#TODO #4 Fazer uma função pra calcular a velocidade do probe, até acho que ajuda pra melhorar a iteração
+#TODO #2 trocar a "role" do parametro de generic pra planet, e faz planet pra target talvez
 
-#TODO #5 melhorar a otimização, fazer em duas etapas
+#TODO #3 melhorar a otimização, fazer em duas etapas
 #TODO #? talvez dê pra fazer 1 otimização no afélio (2 etapas) e depois faço outra otimização no meio do caminho (mid-course correction)
 ## só tem que definir bem o evento pra isso funcionar (ao entrar na esfera de influencia SOI talvez)
 
-#TODO #6 ver quais tipos de testes unitários seriam interessantes de adicionar
+#TODO #4 ver quais tipos de testes unitários seriam interessantes de adicionar

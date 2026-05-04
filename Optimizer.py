@@ -4,7 +4,7 @@ from scipy.optimize import minimize
 class Optimizer:
 
     def __init__(self, universe, max_dv=5e3, initial_guess=[0.0, 0.0]):
-        self.max_dv = max_dv
+        self.max_dv = float(max_dv)
         self.initial_guess = initial_guess #[guess_dvx, guess_dvy]
         self.optimization_attempts = 0
         #cache
