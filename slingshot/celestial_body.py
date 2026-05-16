@@ -2,7 +2,6 @@ import numpy as np
 import math
 
 class CelestialBody:
-
     def __init__(self, name, role, mass, radius, color, orbit_radius, angle_deg, wir=None, is_orbiting=True, vel_x=0.0, vel_y=0.0):
         self.name = name
         self.role = role

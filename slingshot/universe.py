@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 
-from CelestialBody import CelestialBody
+from slingshot.celestial_body import CelestialBody
 
 
 class Universe:
