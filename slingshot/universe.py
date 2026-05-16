@@ -167,10 +167,8 @@ class Universe:
         return probe_vx_index, probe_vy_index
 
 
-    #test if it'll work in the optimizer
-    def simulate_optimized(self, params):
+    def simulate(self, params=[0.0, 0.0]):
         dvx, dvy = params
-
         sol1 = self.run_until_aphelion()
 
         new_y0 = sol1.y[:, -1].copy()
@@ -182,31 +180,7 @@ class Universe:
 
         t_full = np.concatenate((sol1.t, sol2.t))
         y_full = np.concatenate((sol1.y, sol2.y), axis=1)
-
         solution_array = y_full.T
-
-        return solution_array
-    
-
-    def simulate_simple(self):
-
-        solve_ivp_parameters = self.get_solveivp_params(simulation_segment="initial")
-        sol1 = solve_ivp(**solve_ivp_parameters)
-
-        new_y02 = sol1.y[:, -1].copy() #ultimo state
-        deltavx = 5e2
-        deltavy = -2e3
-        new_y02[(self.probe_index-1)*4+2] += deltavx
-        new_y02[(self.probe_index-1)*4+3] += deltavy
-
-        solve_ivp_parameters = self.get_solveivp_params(simulation_segment="next", new_y0=new_y02)
-        sol2 = solve_ivp(**solve_ivp_parameters)
-
-        t_full = np.concatenate((sol1.t, sol2.t))
-        y_full = np.concatenate((sol1.y, sol2.y), axis=1)
-
-        solution_array = y_full.T
-
         return solution_array
     
 
