@@ -51,7 +51,7 @@ class Universe:
             cb.pos_y += cb_wir.pos_y
             if cb.is_orbiting:
                 covp = cb_wir.get_cov_parameters()
-                cb.vel_x, cb.vel_y = cb.Calculate_Orbital_Velocity(**covp)      
+                cb.vel_x, cb.vel_y = cb.calculate_orbital_velocity(**covp)      
 
         #role = probe or satellite
         for cb in self.celestial_bodies:
@@ -64,7 +64,7 @@ class Universe:
                 cb.pos_y += cb_wir.pos_y
                 if cb.is_orbiting:
                     covp = cb_wir.get_cov_parameters()
-                    cb.vel_x, cb.vel_y = cb.Calculate_Orbital_Velocity(**covp)   
+                    cb.vel_x, cb.vel_y = cb.calculate_orbital_velocity(**covp)   
 
             elif cb.role == "probe":
                 cb_wir = body_map[cb.wir]
@@ -72,11 +72,11 @@ class Universe:
                 self.planet_index = self.celestial_bodies.index(cb_wir)
                 self.planet_name = cb_wir.name
                 launch_speed = 5.8e3
-                cb.angle_deg = cb.Calculate_Probe_Angle(planet_vel)
-                cb.pos_x, cb.pos_y = cb.Recalculate_Probe_Position(planet_vel)
+                cb.angle_deg = cb.calculate_probe_angle(planet_vel)
+                cb.pos_x, cb.pos_y = cb.recalculate_probe_position(planet_vel)
                 cb.pos_x += cb_wir.pos_x
                 cb.pos_y += cb_wir.pos_y
-                cb.vel_x, cb.vel_y = cb.Calculate_Probe_Velocity(launch_speed, planet_vel)
+                cb.vel_x, cb.vel_y = cb.calculate_probe_velocity(launch_speed, planet_vel)
 
         self.y0 = self.get_y0()
 

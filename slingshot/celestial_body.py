@@ -45,7 +45,7 @@ class CelestialBody:
         return params
 
 
-    def Calculate_Orbital_Velocity(self, planet_mass, planet_x, planet_y, planet_vx, planet_vy):
+    def calculate_orbital_velocity(self, planet_mass, planet_x, planet_y, planet_vx, planet_vy):
         const_G = 6.67430e-11
         v_planet = np.array([planet_vx, planet_vy])
         vector_planet_satelite = np.array([self.pos_x - planet_x, self.pos_y - planet_y])
@@ -59,7 +59,7 @@ class CelestialBody:
         return resultant_speed_x, resultant_speed_y
     
 
-    def Calculate_Probe_Velocity(self, launch_speed, planet_vel):
+    def calculate_probe_velocity(self, launch_speed, planet_vel):
         planet_vel_norm = np.linalg.norm(planet_vel)
         unit_tangent = planet_vel / planet_vel_norm
         rocket_vel_module = launch_speed
@@ -69,7 +69,7 @@ class CelestialBody:
         return [probe_vel_x, probe_vel_y]
 
 
-    def Calculate_Probe_Angle(self, planet_vel):
+    def calculate_probe_angle(self, planet_vel):
         planet_vel_norm = np.linalg.norm(planet_vel)
         unit_tangent = planet_vel / planet_vel_norm
         probe_angle_rad = math.atan2(unit_tangent[1], unit_tangent[0])
@@ -77,8 +77,8 @@ class CelestialBody:
         return probe_angle_deg
 
     
-    def Recalculate_Probe_Position(self, planet_vel):
-        self.angle_deg = self.Calculate_Probe_Angle(planet_vel)
+    def recalculate_probe_position(self, planet_vel):
+        self.angle_deg = self.calculate_probe_angle(planet_vel)
         self.angle_rad = np.deg2rad(self.angle_deg)
         self.pos_x = self.orbit_radius * np.cos(self.angle_rad)
         self.pos_y = self.orbit_radius * np.sin(self.angle_rad)
