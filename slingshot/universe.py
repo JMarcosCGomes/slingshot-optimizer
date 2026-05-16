@@ -55,7 +55,7 @@ class Universe:
 
         #role = probe or satellite
         for cb in self.celestial_bodies:
-            if cb.role in ("fixed", "planet", "generic"):
+            if cb.role in ("fixed", "planet", "target"):
                 continue
             
             if cb.role == "satellite":
@@ -68,15 +68,15 @@ class Universe:
 
             elif cb.role == "probe":
                 cb_wir = body_map[cb.wir]
-                planet_vel = np.array(cb_wir.get_vel())
-                self.planet_index = self.celestial_bodies.index(cb_wir)
-                self.planet_name = cb_wir.name
+                target_vel = np.array(cb_wir.get_vel())
+                self.target_index = self.celestial_bodies.index(cb_wir)
+                self.target_name = cb_wir.name
                 launch_speed = 5.8e3
-                cb.angle_deg = cb.calculate_probe_angle(planet_vel)
-                cb.pos_x, cb.pos_y = cb.recalculate_probe_position(planet_vel)
+                cb.angle_deg = cb.calculate_probe_angle(target_vel)
+                cb.pos_x, cb.pos_y = cb.recalculate_probe_position(target_vel)
                 cb.pos_x += cb_wir.pos_x
                 cb.pos_y += cb_wir.pos_y
-                cb.vel_x, cb.vel_y = cb.calculate_probe_velocity(launch_speed, planet_vel)
+                cb.vel_x, cb.vel_y = cb.calculate_probe_velocity(launch_speed, target_vel)
 
         self.y0 = self.get_y0()
 
@@ -248,21 +248,21 @@ class Universe:
     
         def event_aphelion(t, y):
             ptr = 0
-            planet_pos = planet_vel = probe_pos = probe_vel = None
+            target_pos = target_vel = probe_pos = probe_vel = None
 
             for i in range(len(self.celestial_bodies)):
                 if i == self.fixed_body_index:
                     continue
-                if i == self.planet_index:
-                    planet_pos = np.array([y[ptr], y[ptr+1]])
-                    planet_vel = np.array([y[ptr+2], y[ptr+3]])
+                if i == self.target_index:
+                    target_pos = np.array([y[ptr], y[ptr+1]])
+                    target_vel = np.array([y[ptr+2], y[ptr+3]])
                 elif i == self.probe_index:
                     probe_pos = np.array([y[ptr], y[ptr+1]])
                     probe_vel = np.array([y[ptr+2], y[ptr+3]])
                 ptr += 4
 
-            r_rel = probe_pos - planet_pos
-            v_rel = probe_vel - planet_vel
+            r_rel = probe_pos - target_pos
+            v_rel = probe_vel - target_vel
             return np.dot(r_rel, v_rel)
 
 

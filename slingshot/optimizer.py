@@ -58,13 +58,13 @@ class Optimizer:
 
         #y pós afélio
         y_p2 = self.sol2.y
-        planet_id = self.universe.planet_index
+        target_id = self.universe.target_index
         probe_id = self.universe.probe_index
         probe_all_x = y_p2[(probe_id-1)*4]
         probe_all_y = y_p2[(probe_id-1)*4 + 1]
-        planet_all_x = y_p2[(planet_id-1)*4]
-        planet_all_y = y_p2[(planet_id-1)*4 + 1]
-        dists = np.sqrt((probe_all_x - planet_all_x)**2 + (probe_all_y - planet_all_y)**2)
+        target_all_x = y_p2[(target_id-1)*4]
+        target_all_y = y_p2[(target_id-1)*4 + 1]
+        dists = np.sqrt((probe_all_x - target_all_x)**2 + (probe_all_y - target_all_y)**2)
         minimal_distance = np.min(dists)
 
         #a energia está nessa escala 200000000=2e8 xe8
@@ -94,29 +94,29 @@ class Optimizer:
         return self.max_dv - np.linalg.norm(params)
     
 
-    def planet_collision_constraint(self, params):
-        planet_id = self.universe.planet_index
+    def target_collision_constraint(self, params):
+        target_id = self.universe.target_index
         probe_id = self.universe.probe_index
 
         y_full = self.run_simulation_if_needed(params)
 
         probe_all_x = y_full[(probe_id-1)*4]
         probe_all_y = y_full[(probe_id-1)*4 + 1]
-        planet_all_x = y_full[(planet_id-1)*4]
-        planet_all_y = y_full[(planet_id-1)*4 + 1]
-        dist = np.sqrt((probe_all_x - planet_all_x)**2 + (probe_all_y - planet_all_y)**2)
+        target_all_x = y_full[(target_id-1)*4]
+        target_all_y = y_full[(target_id-1)*4 + 1]
+        dist = np.sqrt((probe_all_x - target_all_x)**2 + (probe_all_y - target_all_y)**2)
         minimal_distance_found = np.min(dist)
-        planet_radius = self.universe.celestial_bodies[self.universe.planet_index].radius
+        target_radius = self.universe.celestial_bodies[self.universe.target_index].radius
         safety_margin = 2e6
         
-        return minimal_distance_found - (planet_radius + safety_margin)
+        return minimal_distance_found - (target_radius + safety_margin)
 
 
     def set_constraints(self):
         constraint_dv = {'type': 'ineq', 'fun': self.dv_constraint}
-        constraint_planet_collision = {'type': 'ineq', 'fun': self.planet_collision_constraint}
+        constraint_target_collision = {'type': 'ineq', 'fun': self.target_collision_constraint}
 
-        self.constraints = (constraint_dv, constraint_planet_collision)
+        self.constraints = (constraint_dv, constraint_target_collision)
 
     def optimize(self, maxiter=120, ftol=1e-5): 
         bounds = [(-self.max_dv, self.max_dv), (-self.max_dv, self.max_dv)]

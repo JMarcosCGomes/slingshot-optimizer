@@ -58,7 +58,7 @@ celestial_bodies:
 
   - name: Mercury
     active: false
-    role: generic
+    role: planet
     mass: 3.301e23
     radius: 2.4397e6
     color: darkslategray
@@ -70,7 +70,7 @@ celestial_bodies:
 
   - name: Venus
     active: false
-    role: generic
+    role: planet
     mass: 4.867e24
     radius: 6.0518e6
     color: orange
@@ -82,7 +82,7 @@ celestial_bodies:
 
   - name: Earth
     active: true
-    role: planet
+    role: target
     mass: 5.972e24
     radius: 6.371e6
     color: blue
@@ -94,7 +94,7 @@ celestial_bodies:
 
   - name: Mars
     active: false
-    role: generic
+    role: planet
     mass: 6.417e23
     radius: 3.3962e6
     color: red
@@ -106,7 +106,7 @@ celestial_bodies:
 
   - name: Jupiter
     active: false
-    role: generic
+    role: planet
     mass: 1.898e27
     radius: 7.1492e7
     color: peru
@@ -118,7 +118,7 @@ celestial_bodies:
 
   - name: Saturn
     active: false
-    role: generic
+    role: planet
     mass: 5.683e26
     radius: 6.0268e7
     color: khaki
@@ -130,7 +130,7 @@ celestial_bodies:
 
   - name: Uranus
     active: false
-    role: generic
+    role: planet
     mass: 8.681e25
     radius: 2.5559e7
     color: lightblue
@@ -142,7 +142,7 @@ celestial_bodies:
 
   - name: Neptune
     active: false
-    role: generic
+    role: planet
     mass: 1.024e26
     radius: 2.4764e7
     color: royalblue

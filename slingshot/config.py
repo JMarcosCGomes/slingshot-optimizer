@@ -1,6 +1,6 @@
 import yaml
 
-REQUIRED_ROLES = {"fixed", "planet", "probe"}
+REQUIRED_ROLES = {"fixed", "target", "probe"}
 
 def load_config(path="params.yaml"):
     with open(path, "r") as f:
