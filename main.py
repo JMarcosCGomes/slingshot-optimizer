@@ -6,8 +6,8 @@ from slingshot.config import load_config
 #this could be in my parameter file, however i think it's easier to test here
 #simulation_option = "PLOT" # Simple plot
 #simulation_option = "UNTIL_APHELION" # Run the simulation until aphelion
-simulation_option = "FULL_SIMULATION" # Simulate using the chosen deltaV
-#simulation_option = "OPTIMIZED_SIMULATION" # Run optimizer and simulate
+#simulation_option = "FULL_SIMULATION" # Simulate using the chosen deltaV
+simulation_option = "OPTIMIZED_SIMULATION" # Run optimizer and simulate
 
 chosen_dv = [0.0, 0.0] # To use in the "FULL_SIMULATION" option
 
@@ -47,3 +47,10 @@ if __name__ == "__main__":
 #TODO #1 melhorar a otimização, fazer em duas etapas
 #TODO #2 fazer README, adiciona depois o gif da simulação
 #TODO #?(qualquer momento) verificar typos
+
+#na real ele n ta pegando a minimal distance boa, por isso ta podre
+#tem hora que não converge mesmo, faz o if aqui parar o minimize e retornar qualquer coisa
+#acho que corrigi
+
+#testa o ftol 1e-3 no de energia, ve se melhora o tempo
+
