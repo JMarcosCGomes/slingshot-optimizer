@@ -3,9 +3,8 @@ from scipy.optimize import minimize
 
 class Optimizer:
 
-    def __init__(self, universe, max_dv=5e3, initial_guess=[0.0, 0.0]):
+    def __init__(self, universe, max_dv=5e3):
         self.max_dv = float(max_dv)
-        self.initial_guess = initial_guess #[guess_dvx, guess_dvy]
         self.optimization_attempts = 0
         self.optimization_attempts_distance = 0
         self.optimization_attempts_energy = 0
@@ -21,7 +20,20 @@ class Optimizer:
         self._best_energy_score = 2e10
         self._best_energy_dv = [0.0, 0.0]
         self.flyby_threshold_dynamic = 1e9
+        self.initial_guess = self._compute_initial_guess()
 
+
+    def compute_initial_guess(self):
+        y = self.post_aphelion_y
+        probe_id = self.universe.probe_index
+        target_id = self.universe.target_index
+        probe_pos = np.array([y[(probe_id-1)*4], y[(probe_id-1)*4+1]])
+        probe_vel = np.array([y[(probe_id-1)*4+2], y[(probe_id-1)*4+3]])
+        target_pos = np.array([y[(target_id-1)*4], y[(target_id-1)*4+1]])
+        direction = target_pos - probe_pos
+        direction /= np.linalg.norm(direction)
+        return list(direction * self.max_dv * 0.3)
+    
 
     def run_simulation_if_needed(self, params):
         if (self.last_params is not None) and (np.allclose(params, self.last_params, atol=1e-12, rtol=0)):
@@ -196,7 +208,7 @@ class Optimizer:
         ty = y_post[(target_id-1)*4 + 1]
         minimal_distance_phase1 = np.min(np.sqrt((px - tx)**2 + (py - ty)**2))
         #flyby_margin = 1e7
-        flyby_margin = 5e9
+        flyby_margin = 5e8
         self.flyby_threshold_dynamic = minimal_distance_phase1 + flyby_margin
         print(f" Dynamic flyby threshold set to: {self.flyby_threshold_dynamic} meters")
         # ============================================================

@@ -17,7 +17,7 @@ if __name__ == "__main__":
     universe = Universe(config=config)
     visualizer = Visualizer(animation_interval=5, duration=float(config["simulation"]["duration"]))
     visualizer.set_celestial_bodies(universe.get_celestial_bodies(), universe.fixed_body_index)
-    optimizer = Optimizer(universe=universe, max_dv=config["optimizer"]["max_dv"], initial_guess=config["optimizer"]["initial_guess"])
+    optimizer = Optimizer(universe=universe, max_dv=config["optimizer"]["max_dv"])
 
     match simulation_option:
         case "PLOT":
