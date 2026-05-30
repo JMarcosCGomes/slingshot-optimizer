@@ -10,10 +10,10 @@ class Universe:
         self.max_step = float(config["simulation"]["max_step"])
         self.G = 6.67430e-11
         self.duration = float(config["simulation"]["duration"])
-        self.create_celestial_bodies()
+        self._create_celestial_bodies()
 
 
-    def create_celestial_bodies(self):
+    def _create_celestial_bodies(self):
         self.celestial_bodies = []
         self.body_names = []
         self.body_masses = []
@@ -78,11 +78,11 @@ class Universe:
                 cb.pos_y += cb_wir.pos_y
                 cb.vel_x, cb.vel_y = cb.calculate_probe_velocity(launch_speed, target_vel)
 
-        self.y0 = self.get_y0()
+        self.y0 = self._get_y0()
 
 
     # y0 = vetor inicial
-    def get_y0(self):
+    def _get_y0(self):
         y0 = []
         for index, cb in enumerate(self.celestial_bodies):
             if index != self.fixed_body_index:
@@ -95,8 +95,8 @@ class Universe:
         return self.celestial_bodies
 
 
-    # equations_of_motion_setup
-    def equations_of_motion_setup(self, y):
+    # _equations_of_motion_setup
+    def _equations_of_motion_setup(self, y):
         all_positions = []
         all_velocities = []
 
@@ -118,7 +118,7 @@ class Universe:
 
     # tem que deixar t aqui pelo Solver
     def equations_of_motion(self, t, y):
-        all_positions, all_velocities, dydt = self.equations_of_motion_setup(y)
+        all_positions, all_velocities, dydt = self._equations_of_motion_setup(y)
 
         # dessa vez o ptr eh pro vx,vy,ax,ay,...
         ptr = 0
@@ -150,13 +150,13 @@ class Universe:
 
 
     def run_until_aphelion(self):
-        solve_ivp_parameters = self.get_solveivp_params(simulation_segment="initial")
+        solve_ivp_parameters = self._get_solveivp_params(simulation_segment="initial")
         sol1 = solve_ivp(**solve_ivp_parameters)
         return sol1
 
 
     def run_after_aphelion(self, new_y0):
-        solve_ivp_parameters = self.get_solveivp_params(simulation_segment="next", new_y0=new_y0)
+        solve_ivp_parameters = self._get_solveivp_params(simulation_segment="next", new_y0=new_y0)
         sol2 = solve_ivp(**solve_ivp_parameters)
         return sol2
 
@@ -184,12 +184,12 @@ class Universe:
         return solution_array
     
 
-    def get_solveivp_params(self, simulation_segment, new_y0=None):
+    def _get_solveivp_params(self, simulation_segment, new_y0=None):
         if simulation_segment == "initial":
             t_max =  self.duration
             t_eval = np.linspace(0, t_max, 20000)
             y0 = self.y0
-            events = self.create_event_functions()
+            events = self._create_event_functions()
 
         elif simulation_segment == "next":
             ONE_YEAR_IN_SECONDS = 3.154e7
@@ -199,7 +199,7 @@ class Universe:
             y0 = new_y0
             events = None
         else:
-            print("YOU FAILED, error in get_solveivp_params, unexpected simulation_segment")
+            print("YOU FAILED, error in _get_solveivp_params, unexpected simulation_segment")
 
         sivp_params = {
             "fun": self.equations_of_motion,
@@ -218,7 +218,7 @@ class Universe:
         return sivp_params
     
 
-    def create_event_functions(self):
+    def _create_event_functions(self):
     
         def event_aphelion(t, y):
             ptr = 0

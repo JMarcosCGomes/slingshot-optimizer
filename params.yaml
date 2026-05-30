@@ -4,7 +4,6 @@ simulation:
 
 optimizer:
   max_dv: 4.0e3
-  initial_guess: [0.0, 0.0]
 
 
 #name: cb name

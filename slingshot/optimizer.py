@@ -23,7 +23,7 @@ class Optimizer:
         self.initial_guess = self._compute_initial_guess()
 
 
-    def compute_initial_guess(self):
+    def _compute_initial_guess(self):
         y = self.post_aphelion_y
         probe_id = self.universe.probe_index
         target_id = self.universe.target_index
@@ -35,7 +35,7 @@ class Optimizer:
         return list(direction * self.max_dv * 0.3)
     
 
-    def run_simulation_if_needed(self, params):
+    def _run_simulation_if_needed(self, params):
         if (self.last_params is not None) and (np.allclose(params, self.last_params, atol=1e-12, rtol=0)):
             return self.last_y_full, self.last_y_post
         dvx, dvy = params
@@ -53,11 +53,11 @@ class Optimizer:
         return y_full, y_post
 
 
-    def objective_distance(self, params):
+    def _objective_distance(self, params):
         dvx, dvy = params
         self.optimization_attempts_distance += 1
 
-        _, y_post = self.run_simulation_if_needed(params)
+        _, y_post = self._run_simulation_if_needed(params)
         target_id = self.universe.target_index
         probe_id = self.universe.probe_index
         probe_all_x = y_post[(probe_id-1)*4]
@@ -84,10 +84,10 @@ class Optimizer:
         return score
 
 
-    def objective_energy(self, params):
+    def _objective_energy(self, params):
         dvx, dvy = params
         self.optimization_attempts_energy += 1
-        y_full, _ = self.run_simulation_if_needed(params)
+        y_full, _ = self._run_simulation_if_needed(params)
         final_y = y_full[:, -1]
 
         probe_final_x = final_y[(self.universe.probe_index-1)*4]
@@ -124,15 +124,15 @@ class Optimizer:
         return score
 
 
-    def dv_constraint(self, params):
+    def _dv_constraint(self, params):
         return self.max_dv - np.linalg.norm(params)
     
 
-    def target_collision_constraint(self, params):
+    def _target_collision_constraint(self, params):
         target_id = self.universe.target_index
         probe_id = self.universe.probe_index
 
-        _, y_post = self.run_simulation_if_needed(params)
+        _, y_post = self._run_simulation_if_needed(params)
 
         probe_all_x = y_post[(probe_id-1)*4]
         probe_all_y = y_post[(probe_id-1)*4 + 1]
@@ -146,11 +146,11 @@ class Optimizer:
         return minimal_distance_found - (target_radius + safety_margin)
 
 
-    def max_distance_constraint(self, params):
+    def _max_distance_constraint(self, params):
         target_id = self.universe.target_index
         probe_id = self.universe.probe_index
 
-        _, y_post = self.run_simulation_if_needed(params)
+        _, y_post = self._run_simulation_if_needed(params)
 
         probe_all_x = y_post[(probe_id-1)*4]
         probe_all_y = y_post[(probe_id-1)*4 + 1]
@@ -162,10 +162,10 @@ class Optimizer:
         return self.flyby_threshold_dynamic - minimal_distance
 
 
-    def set_constraints(self):
-        constraint_dv = {'type': 'ineq', 'fun': self.dv_constraint}
-        constraint_target_collision = {'type': 'ineq', 'fun': self.target_collision_constraint}
-        constraint_max_distance = {'type': 'ineq', 'fun': self.max_distance_constraint}
+    def _set_constraints(self):
+        constraint_dv = {'type': 'ineq', 'fun': self._dv_constraint}
+        constraint_target_collision = {'type': 'ineq', 'fun': self._target_collision_constraint}
+        constraint_max_distance = {'type': 'ineq', 'fun': self._max_distance_constraint}
 
         self.constraints_distance = (constraint_dv, constraint_target_collision)
         self.constraints_energy = (constraint_dv, constraint_target_collision, constraint_max_distance)
@@ -185,12 +185,12 @@ class Optimizer:
         method_energy = 'SLSQP'
         options_energy = {
             'maxiter': maxiter,
-            'ftol': 1e-3,
+            'ftol': 1e-6,
             #'disp': True,
-            'eps': 75.0,
+            'eps': 250.0,
         }
 
-        result_distance = minimize(self.objective_distance, self.initial_guess, method=method_distance, bounds=bounds, constraints=self.constraints_distance, options=options_distance)
+        result_distance = minimize(self._objective_distance, self.initial_guess, method=method_distance, bounds=bounds, constraints=self.constraints_distance, options=options_distance)
         self.distance_score = result_distance.fun
         self.best_dv_distance = result_distance.x
 
@@ -199,7 +199,7 @@ class Optimizer:
         print(f"local best deltaV (distance only): {self.best_dv_distance}")    
         print(f"distance optimization score: {self.distance_score}")
 
-        _, y_post = self.run_simulation_if_needed(self.best_dv_distance)
+        _, y_post = self._run_simulation_if_needed(self.best_dv_distance)
         probe_id = self.universe.probe_index
         target_id = self.universe.target_index
         px = y_post[(probe_id-1)*4]
@@ -220,7 +220,7 @@ class Optimizer:
 
         print("============ ENERGY OPTIMIZATION STARTING ============") 
 
-        result_energy = minimize(self.objective_energy, self.best_dv_distance, method=method_energy, bounds=bounds, constraints=self.constraints_energy, options=options_energy)
+        result_energy = minimize(self._objective_energy, self.best_dv_distance, method=method_energy, bounds=bounds, constraints=self.constraints_energy, options=options_energy)
         self.energy_score = - self._best_energy_score
         self.best_dv = self._best_energy_dv
 

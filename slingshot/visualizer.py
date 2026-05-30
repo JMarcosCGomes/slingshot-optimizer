@@ -20,7 +20,7 @@ class Visualizer():
         self.fixed_body_index = fixed_body_index
 
 
-    def create_plot(self, ax):
+    def _create_plot(self, ax):
         ax.set_xlim(-self.limit_x, self.limit_x)
         ax.set_ylim(-self.limit_y, self.limit_y)
         ax.set_aspect("equal", adjustable="datalim")
@@ -30,9 +30,9 @@ class Visualizer():
         ax.set_ylabel("Y (m)")
         
 
-    def plot_celestial_bodies(self, ax):
+    def _plot_celestial_bodies(self, ax):
         if self.celestial_bodies is None:
-            print("Visualizer.plot_celestial_bodies() error #1")
+            print("Visualizer._plot_celestial_bodies() error #1")
             return
         
         else:
@@ -45,14 +45,14 @@ class Visualizer():
 
     def simple_plot(self):
         fig, ax = plt.subplots(figsize=(15, 8))
-        self.create_plot(ax)
-        self.plot_celestial_bodies(ax)
+        self._create_plot(ax)
+        self._plot_celestial_bodies(ax)
         ax.set_title("Plot simples para visualizar as posicoes iniciais")
         plt.legend()
         plt.show()
 
         
-    def get_current_state(self, y_in_t):
+    def _get_current_state(self, y_in_t):
         current_states = []
         ptr = 0
         for i, cb in enumerate(self.celestial_bodies):
@@ -64,9 +64,9 @@ class Visualizer():
         return current_states
 
 
-    def build_traces(self, solution_array):
+    def _build_traces(self, solution_array):
         if self.celestial_bodies is None:
-            print("Visualizer.build_traces() error #1")
+            print("Visualizer._build_traces() error #1")
             return
         
         for cb in self.celestial_bodies:
@@ -74,7 +74,7 @@ class Visualizer():
         
         for step in range(len(solution_array)):
                 y_in_t = solution_array[step]
-                current_states = self.get_current_state(y_in_t)
+                current_states = self._get_current_state(y_in_t)
                 for i, state in enumerate(current_states):
                     self.celestial_bodies[i].trace.append((state["pos_x"], state["pos_y"]))
 
@@ -85,10 +85,10 @@ class Visualizer():
             return
         
         if add_trace:
-            self.build_traces(self.solution_array)
+            self._build_traces(self.solution_array)
 
         fig, ax = plt.subplots(figsize=(15, 8))
-        self.create_plot(ax)
+        self._create_plot(ax)
         
         lines = []
         points = []
@@ -103,7 +103,7 @@ class Visualizer():
 
 
         def update(frame):
-            current_states = self.get_current_state(self.solution_array[frame])
+            current_states = self._get_current_state(self.solution_array[frame])
 
             for i, cb in enumerate(self.celestial_bodies):
                 lines[i].set_data([p[0] for p in cb.trace[:frame + 1]], [p[1] for p in cb.trace[:frame + 1]])

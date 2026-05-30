@@ -7,11 +7,11 @@ def load_config(path="params.yaml"):
         config = yaml.safe_load(f)
     
     active_celestial_bodies = [cb for cb in config["celestial_bodies"] if cb.get("active", True)]
-    validate_config(active_celestial_bodies)
+    _validate_config(active_celestial_bodies)
     config["celestial_bodies"] = active_celestial_bodies
     return config
 
-def validate_config(bodies):
+def _validate_config(bodies):
     active_roles = {b["role"] for b in bodies}
     missing = REQUIRED_ROLES - active_roles
     if missing:
