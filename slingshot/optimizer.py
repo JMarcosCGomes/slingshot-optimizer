@@ -25,7 +25,7 @@ class Optimizer:
 
     def run_simulation_if_needed(self, params):
         if (self.last_params is not None) and (np.allclose(params, self.last_params, atol=1e-12, rtol=0)):
-            return self.last_y_full
+            return self.last_y_full, self.last_y_post
         dvx, dvy = params
         post_aphelion_y = self.post_aphelion_y.copy()
         post_aphelion_y[(self.universe.probe_index-1)*4+2] += dvx
@@ -33,29 +33,32 @@ class Optimizer:
 
         #preciso dele pra pegar a distancia do pos aphelion
         self.sol2 = self.universe.run_after_aphelion(new_y0=post_aphelion_y)
+        y_post = self.sol2.y
         y_full = np.concatenate((self.sol1.y, self.sol2.y), axis=1)
         self.last_params = params.copy()
         self.last_y_full = y_full
-        return y_full
+        self.last_y_post = y_post
+        return y_full, y_post
+
 
     def objective_distance(self, params):
         dvx, dvy = params
         self.optimization_attempts_distance += 1
 
-        y_full = self.run_simulation_if_needed(params)
+        _, y_post = self.run_simulation_if_needed(params)
         target_id = self.universe.target_index
         probe_id = self.universe.probe_index
-        probe_all_x = y_full[(probe_id-1)*4]
-        probe_all_y = y_full[(probe_id-1)*4 + 1]
-        target_all_x = y_full[(target_id-1)*4]
-        target_all_y = y_full[(target_id-1)*4 + 1]
+        probe_all_x = y_post[(probe_id-1)*4]
+        probe_all_y = y_post[(probe_id-1)*4 + 1]
+        target_all_x = y_post[(target_id-1)*4]
+        target_all_y = y_post[(target_id-1)*4 + 1]
         dists = np.sqrt((probe_all_x - target_all_x)**2 + (probe_all_y - target_all_y)**2)
         minimal_distance = np.min(dists)
         
         scale_ua = 1.49e11 # 1 UA
-        distance_weight = 1e10
-        distance_score = ((minimal_distance / scale_ua) ** 2) * distance_weight
-        #distance_score = minimal_distance / 1e6
+        #distance_weight = 1e10
+        #distance_score = ((minimal_distance / scale_ua) ** 2) * distance_weight
+        distance_score = minimal_distance / 1e6
         score = distance_score
 
         print(f"Distance Optimization")
@@ -72,7 +75,7 @@ class Optimizer:
     def objective_energy(self, params):
         dvx, dvy = params
         self.optimization_attempts_energy += 1
-        y_full = self.run_simulation_if_needed(params)
+        y_full, _ = self.run_simulation_if_needed(params)
         final_y = y_full[:, -1]
 
         probe_final_x = final_y[(self.universe.probe_index-1)*4]
@@ -117,12 +120,12 @@ class Optimizer:
         target_id = self.universe.target_index
         probe_id = self.universe.probe_index
 
-        y_full = self.run_simulation_if_needed(params)
+        _, y_post = self.run_simulation_if_needed(params)
 
-        probe_all_x = y_full[(probe_id-1)*4]
-        probe_all_y = y_full[(probe_id-1)*4 + 1]
-        target_all_x = y_full[(target_id-1)*4]
-        target_all_y = y_full[(target_id-1)*4 + 1]
+        probe_all_x = y_post[(probe_id-1)*4]
+        probe_all_y = y_post[(probe_id-1)*4 + 1]
+        target_all_x = y_post[(target_id-1)*4]
+        target_all_y = y_post[(target_id-1)*4 + 1]
         dist = np.sqrt((probe_all_x - target_all_x)**2 + (probe_all_y - target_all_y)**2)
         minimal_distance_found = np.min(dist)
         target_radius = self.universe.celestial_bodies[self.universe.target_index].radius
@@ -135,12 +138,12 @@ class Optimizer:
         target_id = self.universe.target_index
         probe_id = self.universe.probe_index
 
-        y_full = self.run_simulation_if_needed(params)
+        _, y_post = self.run_simulation_if_needed(params)
 
-        probe_all_x = y_full[(probe_id-1)*4]
-        probe_all_y = y_full[(probe_id-1)*4 + 1]
-        target_all_x = y_full[(target_id-1)*4]
-        target_all_y = y_full[(target_id-1)*4 + 1]
+        probe_all_x = y_post[(probe_id-1)*4]
+        probe_all_y = y_post[(probe_id-1)*4 + 1]
+        target_all_x = y_post[(target_id-1)*4]
+        target_all_y = y_post[(target_id-1)*4 + 1]
         dists = np.sqrt((probe_all_x - target_all_x)**2 + (probe_all_y - target_all_y)**2)
         minimal_distance = np.min(dists)
 
@@ -164,7 +167,7 @@ class Optimizer:
             'maxiter': maxiter,
             'ftol': 1e-3,
             #'disp': True,
-            'eps': 4.0,
+            'eps': 250.0,
         }
 
         method_energy = 'SLSQP'
@@ -172,7 +175,7 @@ class Optimizer:
             'maxiter': maxiter,
             'ftol': 1e-3,
             #'disp': True,
-            'eps': 0.75,
+            'eps': 75.0,
         }
 
         result_distance = minimize(self.objective_distance, self.initial_guess, method=method_distance, bounds=bounds, constraints=self.constraints_distance, options=options_distance)
@@ -184,15 +187,16 @@ class Optimizer:
         print(f"local best deltaV (distance only): {self.best_dv_distance}")    
         print(f"distance optimization score: {self.distance_score}")
 
-        y_full = self.run_simulation_if_needed(self.best_dv_distance)
+        _, y_post = self.run_simulation_if_needed(self.best_dv_distance)
         probe_id = self.universe.probe_index
         target_id = self.universe.target_index
-        px = y_full[(probe_id-1)*4]
-        py = y_full[(probe_id-1)*4 + 1]
-        tx = y_full[(target_id-1)*4]
-        ty = y_full[(target_id-1)*4 + 1]
+        px = y_post[(probe_id-1)*4]
+        py = y_post[(probe_id-1)*4 + 1]
+        tx = y_post[(target_id-1)*4]
+        ty = y_post[(target_id-1)*4 + 1]
         minimal_distance_phase1 = np.min(np.sqrt((px - tx)**2 + (py - ty)**2))
-        flyby_margin = 1e7
+        #flyby_margin = 1e7
+        flyby_margin = 5e9
         self.flyby_threshold_dynamic = minimal_distance_phase1 + flyby_margin
         print(f" Dynamic flyby threshold set to: {self.flyby_threshold_dynamic} meters")
         # ============================================================
