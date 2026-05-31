@@ -1,22 +1,23 @@
 import numpy as np
 from scipy.optimize import minimize
+from scipy.optimize import differential_evolution, NonlinearConstraint
 
 class Optimizer:
 
     def __init__(self, universe, max_dv=5e3):
         self.max_dv = float(max_dv)
-        self.optimization_attempts = 0
         self.optimization_attempts_distance = 0
         self.optimization_attempts_energy = 0
         #cache
         self.last_params = None
         self.last_y_full = None 
+        self.last_y_post = None
         #universe setup
         self.universe = universe
         self.sol1 = self.universe.run_until_aphelion()
         self.post_aphelion_y = self.sol1.y[:, -1].copy()
         #constraints
-        self.set_constraints()
+        self._set_constraints()
         self._best_energy_score = 2e10
         self._best_energy_dv = [0.0, 0.0]
         self.flyby_threshold_dynamic = 1e9
@@ -28,7 +29,6 @@ class Optimizer:
         probe_id = self.universe.probe_index
         target_id = self.universe.target_index
         probe_pos = np.array([y[(probe_id-1)*4], y[(probe_id-1)*4+1]])
-        probe_vel = np.array([y[(probe_id-1)*4+2], y[(probe_id-1)*4+3]])
         target_pos = np.array([y[(target_id-1)*4], y[(target_id-1)*4+1]])
         direction = target_pos - probe_pos
         direction /= np.linalg.norm(direction)
@@ -67,9 +67,6 @@ class Optimizer:
         dists = np.sqrt((probe_all_x - target_all_x)**2 + (probe_all_y - target_all_y)**2)
         minimal_distance = np.min(dists)
         
-        scale_ua = 1.49e11 # 1 UA
-        #distance_weight = 1e10
-        #distance_score = ((minimal_distance / scale_ua) ** 2) * distance_weight
         distance_score = minimal_distance / 1e6
         score = distance_score
 
@@ -165,10 +162,13 @@ class Optimizer:
     def _set_constraints(self):
         constraint_dv = {'type': 'ineq', 'fun': self._dv_constraint}
         constraint_target_collision = {'type': 'ineq', 'fun': self._target_collision_constraint}
-        constraint_max_distance = {'type': 'ineq', 'fun': self._max_distance_constraint}
+
+        nlc_dv = NonlinearConstraint(self._dv_constraint, 0, np.inf)
+        nlc_target_collision = NonlinearConstraint(self._target_collision_constraint, 0, np.inf)
+        nlc_max_distance = NonlinearConstraint(self._max_distance_constraint, 0, np.inf)
 
         self.constraints_distance = (constraint_dv, constraint_target_collision)
-        self.constraints_energy = (constraint_dv, constraint_target_collision, constraint_max_distance)
+        self.constraints_energy = (nlc_dv, nlc_target_collision, nlc_max_distance)
 
 
     def optimize(self, maxiter): 
@@ -182,14 +182,7 @@ class Optimizer:
             'eps': 250.0,
         }
 
-        method_energy = 'SLSQP'
-        options_energy = {
-            'maxiter': maxiter,
-            'ftol': 1e-6,
-            #'disp': True,
-            'eps': 250.0,
-        }
-
+        
         result_distance = minimize(self._objective_distance, self.initial_guess, method=method_distance, bounds=bounds, constraints=self.constraints_distance, options=options_distance)
         self.distance_score = result_distance.fun
         self.best_dv_distance = result_distance.x
@@ -207,8 +200,7 @@ class Optimizer:
         tx = y_post[(target_id-1)*4]
         ty = y_post[(target_id-1)*4 + 1]
         minimal_distance_phase1 = np.min(np.sqrt((px - tx)**2 + (py - ty)**2))
-        #flyby_margin = 1e7
-        flyby_margin = 5e8
+        flyby_margin = 2e8
         self.flyby_threshold_dynamic = minimal_distance_phase1 + flyby_margin
         print(f" Dynamic flyby threshold set to: {self.flyby_threshold_dynamic} meters")
         # ============================================================
@@ -220,13 +212,32 @@ class Optimizer:
 
         print("============ ENERGY OPTIMIZATION STARTING ============") 
 
-        result_energy = minimize(self._objective_energy, self.best_dv_distance, method=method_energy, bounds=bounds, constraints=self.constraints_energy, options=options_energy)
-        self.energy_score = - self._best_energy_score
-        self.best_dv = self._best_energy_dv
+
+        result_energy = differential_evolution(
+            self._objective_energy,
+            bounds=bounds,
+            x0=self.best_dv_distance,
+            constraints=self.constraints_energy,
+            maxiter=maxiter,
+            seed=42,
+            popsize=8,
+            tol=1e-3,
+            init='sobol',
+            polish=False,
+            disp=True,
+        )
+        
+        if result_energy.success:
+            self.best_dv = result_energy.x
+            self.energy_score = -result_energy.fun
+        else:
+            self.best_dv = self._best_energy_dv
+            self.energy_score = -self._best_energy_score
+
 
 
         print("================= SUMMARY =================")
-        print(f"Methods: distance-{method_distance} ; energy-{method_energy}")
+        print(f"Methods: distance-{method_distance} ; energy- Differential Evolution")
         print(f"local best deltaV (distance only): {self.best_dv_distance}")    
         print(f"best deltaV: {self.best_dv}")
         print(f"distance optimization score: {self.distance_score}")

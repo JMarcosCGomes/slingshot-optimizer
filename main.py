@@ -9,7 +9,8 @@ from slingshot.config import load_config
 #simulation_option = "FULL_SIMULATION" # Simulate with a manually chosen ΔV
 simulation_option = "OPTIMIZED_SIMULATION" # Run optimizer, then animate result
 
-chosen_dv = [0.0, 0.0] # To use in the "FULL_SIMULATION" option
+chosen_dv = [-2729.83855081, 1411.46372625] # To use in the "FULL_SIMULATION" option
+
 
 config = load_config()
 
