@@ -11,14 +11,14 @@ simulation_option = "OPTIMIZED_SIMULATION" # Run optimizer, then animate result
 
 chosen_dv = [-2729.83855081, 1411.46372625] # To use in the "FULL_SIMULATION" option
 
-
 config = load_config()
+POST_OPT_FLYBY_YEARS = float(config["main"]["post_opt_flyby_years"])
 
 if __name__ == "__main__":
     universe = Universe(config=config)
-    visualizer = Visualizer(animation_interval=5, duration=float(config["simulation"]["duration"]))
+    visualizer = Visualizer(animation_interval=5)
     visualizer.set_celestial_bodies(universe.get_celestial_bodies(), universe.fixed_body_index)
-    optimizer = Optimizer(universe=universe, max_dv=config["optimizer"]["max_dv"])
+    optimizer = Optimizer(universe=universe, max_dv=config["optimizer"]["max_dv"], pre_opt_flyby_years=config['optimizer']['pre_opt_flyby_years'])
 
     match simulation_option:
         case "PLOT":
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
         case "OPTIMIZED_SIMULATION":
             dv = optimizer.optimize(maxiter=30)
-            solution_array = universe.simulate(dv)
+            solution_array = universe.simulate(dv, years=POST_OPT_FLYBY_YEARS)
             visualizer.set_solution_array(solution_array)
             visualizer.animate()
 

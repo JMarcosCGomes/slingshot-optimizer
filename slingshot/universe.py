@@ -9,7 +9,7 @@ class Universe:
         self.config = config
         self.max_step = float(config["simulation"]["max_step"])
         self.G = 6.67430e-11
-        self.duration = float(config["simulation"]["duration"])
+        self.max_phase1_duration = float(config["simulation"]["max_phase1_duration"])
         self._create_celestial_bodies()
 
 
@@ -155,8 +155,8 @@ class Universe:
         return sol1
 
 
-    def run_after_aphelion(self, new_y0):
-        solve_ivp_parameters = self._get_solveivp_params(simulation_segment="next", new_y0=new_y0)
+    def run_after_aphelion(self, new_y0, years):
+        solve_ivp_parameters = self._get_solveivp_params(simulation_segment="next", new_y0=new_y0, years=years)
         sol2 = solve_ivp(**solve_ivp_parameters)
         return sol2
 
@@ -167,7 +167,7 @@ class Universe:
         return probe_vx_index, probe_vy_index
 
 
-    def simulate(self, params=[0.0, 0.0]):
+    def simulate(self, params=[0.0, 0.0], years=1.5):
         dvx, dvy = params
         sol1 = self.run_until_aphelion()
 
@@ -176,7 +176,7 @@ class Universe:
         new_y0[probe_vx_index] += dvx
         new_y0[probe_vy_index] += dvy
 
-        sol2 = self.run_after_aphelion(new_y0=new_y0)
+        sol2 = self.run_after_aphelion(new_y0=new_y0, years=years)
 
         t_full = np.concatenate((sol1.t, sol2.t))
         y_full = np.concatenate((sol1.y, sol2.y), axis=1)
@@ -184,17 +184,17 @@ class Universe:
         return solution_array
     
 
-    def _get_solveivp_params(self, simulation_segment, new_y0=None):
+    def _get_solveivp_params(self, simulation_segment, new_y0=None, years=1.5):
         if simulation_segment == "initial":
-            t_max =  self.duration
+            t_max =  self.max_phase1_duration
             t_eval = np.linspace(0, t_max, 20000)
             y0 = self.y0
             events = self._create_event_functions()
 
         elif simulation_segment == "next":
             ONE_YEAR_IN_SECONDS = 3.154e7
-            t_max = ONE_YEAR_IN_SECONDS * 1.5
-            ratio = t_max / self.duration
+            t_max = ONE_YEAR_IN_SECONDS * years
+            ratio = t_max / self.max_phase1_duration
             t_eval = np.linspace(0, t_max, int(20000 * ratio))
             y0 = new_y0
             events = None

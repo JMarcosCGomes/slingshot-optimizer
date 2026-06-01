@@ -1,10 +1,13 @@
 simulation:
-  duration: 4.0e8
+  max_phase1_duration: 4.0e8
   max_step: 21600 # 86400 / 4
 
 optimizer:
   max_dv: 4.0e3
+  pre_opt_flyby_years: 1.5
 
+main:
+  post_opt_flyby_years: 4.0
 
 #name: cb name
 #active: 

@@ -2,8 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 class Visualizer():
-    def __init__(self, animation_interval=100, duration=4e8, limit_x=4e11, limit_y=4e11):
-        self.duration = duration
+    def __init__(self, animation_interval=100, limit_x=4e11, limit_y=4e11):
         self.animation_interval = animation_interval        
         self.limit_x = limit_x
         self.limit_y = limit_y

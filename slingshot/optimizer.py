@@ -4,8 +4,9 @@ from scipy.optimize import differential_evolution, NonlinearConstraint
 
 class Optimizer:
 
-    def __init__(self, universe, max_dv=5e3):
+    def __init__(self, universe, max_dv=5e3, pre_opt_flyby_years=1.5):
         self.max_dv = float(max_dv)
+        self.pre_opt_flyby_years = float(pre_opt_flyby_years)
         self.optimization_attempts_distance = 0
         self.optimization_attempts_energy = 0
         #cache
@@ -44,7 +45,7 @@ class Optimizer:
         post_aphelion_y[(self.universe.probe_index-1)*4+3] += dvy
 
         #preciso dele pra pegar a distancia do pos aphelion
-        self.sol2 = self.universe.run_after_aphelion(new_y0=post_aphelion_y)
+        self.sol2 = self.universe.run_after_aphelion(new_y0=post_aphelion_y, years=self.pre_opt_flyby_years)
         y_post = self.sol2.y
         y_full = np.concatenate((self.sol1.y, self.sol2.y), axis=1)
         self.last_params = params.copy()
