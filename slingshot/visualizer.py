@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 class Visualizer():
-    def __init__(self, animation_interval=100, limit_x=4e11, limit_y=4e11):
+    def __init__(self, animation_interval=100, limit_x=3.5e11, limit_y=3.5e11):
         self.animation_interval = animation_interval        
         self.limit_x = limit_x
         self.limit_y = limit_y
@@ -43,7 +43,7 @@ class Visualizer():
 
 
     def simple_plot(self):
-        fig, ax = plt.subplots(figsize=(15, 8))
+        fig, ax = plt.subplots(figsize=(9, 9))
         self._create_plot(ax)
         self._plot_celestial_bodies(ax)
         ax.set_title("Plot simples para visualizar as posicoes iniciais")
@@ -86,7 +86,7 @@ class Visualizer():
         if add_trace:
             self._build_traces(self.solution_array)
 
-        fig, ax = plt.subplots(figsize=(15, 8))
+        fig, ax = plt.subplots(figsize=(9, 9))
         self._create_plot(ax)
         
         lines = []
