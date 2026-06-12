@@ -52,7 +52,7 @@ slingshot-optimizer/
 **Requirements:** Python 3.10+ (match-case syntax is used in `main.py`)
 
 ```bash
-git clone https://github.com/JMarcosCGomes/slingshot-optimizer.git
+git clone git@github.com:JMarcosCGomes/slingshot-optimizer.git
 cd slingshot-optimizer
 pip install -r requirements.txt
 ```
